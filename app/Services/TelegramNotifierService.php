@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Order;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class TelegramNotifierService
+{
+    private string $apiBase;
+    private ?string $chatId;
+
+    public function __construct()
+    {
+        $token = config('services.telegram.bot_token');
+        $this->chatId = config('services.telegram.chat_id');
+        $this->apiBase = "https://api.telegram.org/bot{$token}";
+    }
+
+    /**
+     * Send a new-order alert to the store owner's Telegram chat.
+     * Silently logs and returns false on any failure — never throws.
+     */
+    public function sendOrderAlert(Order $order): bool
+    {
+        if (empty($this->chatId) || empty(config('services.telegram.bot_token'))) {
+            Log::warning('TelegramNotifier: bot_token or chat_id not configured, skipping alert.');
+            return false;
+        }
+
+        try {
+            $text = $this->buildMessage($order);
+
+            $response = Http::timeout(10)->post("{$this->apiBase}/sendMessage", [
+                'chat_id'    => $this->chatId,
+                'text'       => $text,
+                'parse_mode' => 'HTML',
+            ]);
+
+            if (! $response->successful()) {
+                Log::error('TelegramNotifier: API call failed.', [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                    'order'  => $order->order_number,
+                ]);
+                return false;
+            }
+
+            return true;
+
+        } catch (\Throwable $e) {
+            Log::error('TelegramNotifier: Exception while sending alert.', [
+                'message' => $e->getMessage(),
+                'order'   => $order->order_number,
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Build the Telegram message text for a new order.
+     * Follows Global Conventions: Western numerals + ل.س currency.
+     */
+    private function buildMessage(Order $order): string
+    {
+        // Load relations if not already loaded
+        $order->loadMissing(['deliveryArea', 'items']);
+
+        // Build items list
+        $itemsText = $order->items->map(function ($item) {
+            $size = $item->size_label_snapshot ? " ({$item->size_label_snapshot})" : '';
+            return "• {$item->product_name_snapshot}{$size} × {$item->quantity}";
+        })->implode("\n");
+
+        $deliveryArea = $order->deliveryArea
+            ? "{$order->deliveryArea->city_ar} - {$order->deliveryArea->area_ar}"
+            : '—';
+
+        $paymentMethod = match ($order->payment_method?->value ?? $order->payment_method) {
+            'cod', 'cash_on_delivery' => 'الدفع عند الاستلام',
+            'sham_cash'               => 'شام كاش',
+            default                   => $order->payment_method,
+        };
+
+        $paymentStatus = match ($order->payment_status?->value ?? $order->payment_status) {
+            'pending' => 'بانتظار الدفع',
+            'paid'    => 'مدفوع ✅',
+            'failed'  => 'فشل الدفع ❌',
+            default   => $order->payment_status,
+        };
+
+        $deliveryDate = $order->delivery_date
+            ? $order->delivery_date->format('Y-m-d')
+            : '—';
+
+        return implode("\n", [
+            '🌹 <b>طلب جديد — كشك الورد</b>',
+            '',
+            "📋 <b>رقم الطلب:</b> {$order->order_number}",
+            "👤 <b>المستلم:</b> {$order->recipient_name}",
+            "📞 <b>هاتف:</b> {$order->recipient_phone}",
+            "📍 <b>المنطقة:</b> {$deliveryArea}",
+            '',
+            '🛒 <b>المنتجات:</b>',
+            $itemsText,
+            '',
+            "💰 <b>الإجمالي:</b> " . format_money($order->total),
+            "💳 <b>الدفع:</b> {$paymentMethod}",
+            "🔖 <b>حالة الدفع:</b> {$paymentStatus}",
+            '',
+            "📅 <b>التوصيل:</b> {$deliveryDate}",
+            "⏰ <b>الوقت:</b> {$order->delivery_time_slot}",
+        ]);
+    }
+}
