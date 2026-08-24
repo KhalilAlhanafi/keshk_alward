@@ -77,17 +77,18 @@ class TelegramNotifierService
             ? "{$order->deliveryArea->city_ar} - {$order->deliveryArea->area_ar}"
             : '—';
 
-        $paymentMethod = match ($order->payment_method?->value ?? $order->payment_method) {
+        $paymentMethod = match ($order->payment_method?->value ?? (string) $order->payment_method) {
             'cod', 'cash_on_delivery' => 'الدفع عند الاستلام',
-            'sham_cash'               => 'شام كاش',
-            default                   => $order->payment_method,
+            'sham_cash'               => 'شام كاش 📲',
+            default                   => $order->payment_method?->labelAr() ?? (string) $order->payment_method,
         };
 
-        $paymentStatus = match ($order->payment_status?->value ?? $order->payment_status) {
-            'pending' => 'بانتظار الدفع',
-            'paid'    => 'مدفوع ✅',
-            'failed'  => 'فشل الدفع ❌',
-            default   => $order->payment_status,
+        $paymentStatus = match ($order->payment_status?->value ?? (string) $order->payment_status) {
+            'pending'               => 'قيد الانتظار ⏳',
+            'awaiting_verification' => 'بانتظار التحقق من الإيصال ⏳',
+            'verified', 'paid'      => 'تم التحقق والدفع ✅',
+            'rejected', 'failed'    => 'مرفوض / فشل الدفع ❌',
+            default                 => $order->payment_status?->labelAr() ?? (string) $order->payment_status,
         };
 
         $deliveryDate = $order->delivery_date

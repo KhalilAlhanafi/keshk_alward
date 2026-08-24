@@ -53,6 +53,6 @@ class RegisteredUserController extends Controller
 
         app(\App\Services\CartMergeService::class)->merge($user, $request->cookie('session_token'));
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('home'));
     }
 }

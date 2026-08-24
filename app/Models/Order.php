@@ -106,6 +106,14 @@ class Order extends Model
         return format_money($this->delivery_fee);
     }
 
+    /**
+     * Alias accessor for status attribute.
+     */
+    public function getOrderStatusAttribute(): ?OrderStatus
+    {
+        return $this->status;
+    }
+
     protected static function booted(): void
     {
         $flush = fn () => CacheService::flushOrderCaches();

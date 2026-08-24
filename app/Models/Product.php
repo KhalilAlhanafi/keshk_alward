@@ -29,6 +29,13 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = [
+        'name',
+        'price',
+        'primary_image_url',
+        'formatted_price',
+    ];
+
     protected static function booted(): void
     {
         $flush = fn () => CacheService::flushProductCaches();
@@ -49,6 +56,33 @@ class Product extends Model
     public function addons(): BelongsToMany
     {
         return $this->belongsToMany(Addon::class, 'product_addon');
+    }
+
+    /**
+     * Accessor for price alias (base_price).
+     */
+    public function getPriceAttribute(): int
+    {
+        return $this->base_price ?? 0;
+    }
+
+    /**
+     * Accessor for name alias (name_ar or fallback).
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->name_ar ?? $this->attributes['name'] ?? 'منتج فاخر';
+    }
+
+    /**
+     * Accessor for primary image URL.
+     */
+    public function getPrimaryImageUrlAttribute(): string
+    {
+        if (!empty($this->image_path)) {
+            return str_starts_with($this->image_path, 'http') ? $this->image_path : asset('storage/' . $this->image_path);
+        }
+        return 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=600&q=80';
     }
 
     /**

@@ -12,10 +12,15 @@ class DeliveryAreaController extends Controller
     /**
      * Display a listing of delivery areas.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $areas = DeliveryArea::orderBy('city_ar')->orderBy('area_ar')->get();
-        return response()->json($areas);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($areas);
+        }
+
+        return view('admin.delivery-areas.index', compact('areas'));
     }
 
     /**

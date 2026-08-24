@@ -14,9 +14,9 @@ class DashboardController extends Controller
     /**
      * Display the admin dashboard stats and recent lists.
      */
-    public function index(): JsonResponse
+    public function index(): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
-        $stats = Cache::remember('admin_dashboard_stats', 300, function () {
+        $data = Cache::remember('admin_dashboard_stats', 300, function () {
             // Define time windows
             $now = now();
             $sevenDaysAgo = now()->subDays(7);
@@ -37,10 +37,9 @@ class DashboardController extends Controller
             $revenueChange = $this->calculatePercentageChange($currentWeekRevenue, $prevWeekRevenue);
 
             // 3. Customers Stats (All-time + Week-over-Week Change)
-            // Customers are users with role "customer"
-            $totalCustomers = User::role('customer')->count();
-            $currentWeekCustomers = User::role('customer')->where('created_at', '>=', $sevenDaysAgo)->count();
-            $prevWeekCustomers = User::role('customer')->whereBetween('created_at', [$fourteenDaysAgo, $sevenDaysAgo])->count();
+            $totalCustomers = User::where('role', 'customer')->count();
+            $currentWeekCustomers = User::where('role', 'customer')->where('created_at', '>=', $sevenDaysAgo)->count();
+            $prevWeekCustomers = User::where('role', 'customer')->whereBetween('created_at', [$fourteenDaysAgo, $sevenDaysAgo])->count();
             $customersChange = $this->calculatePercentageChange($currentWeekCustomers, $prevWeekCustomers);
 
             // 4. Recent Products (with stock info & low-stock indicator)
@@ -52,12 +51,12 @@ class DashboardController extends Controller
                     $totalStock = $product->sizes->sum('stock');
                     return [
                         'id' => $product->id,
-                        'name_ar' => $product->name_ar,
-                        'category' => $product->category->name_ar ?? 'بدون تصنيف',
+                        'name_ar' => $product->name,
+                        'category' => $product->category->name ?? 'بدون تصنيف',
                         'total_stock' => $totalStock,
                         'is_low_stock' => $totalStock < 5,
                         'sizes' => $product->sizes->map(fn($size) => [
-                            'label' => $size->label_ar,
+                            'label' => $size->name,
                             'stock' => $size->stock,
                             'price' => $size->price,
                             'formatted_price' => format_money($size->price),
@@ -68,17 +67,29 @@ class DashboardController extends Controller
             // 5. Recent Incoming Orders (with status badges)
             $recentOrders = Order::with('user')
                 ->orderBy('created_at', 'desc')
-                ->limit(5)
+                ->limit(8)
                 ->get()
                 ->map(function ($order) {
+                    $statusLabel = $order->status instanceof \App\Enums\OrderStatus 
+                        ? $order->status->labelAr() 
+                        : (\App\Enums\OrderStatus::tryFrom((string)$order->status)?->labelAr() ?? 'قيد المعالجة');
+
+                    $paymentMethodLabel = match ($order->payment_method?->value ?? (string) $order->payment_method) {
+                        'sham_cash' => 'شام كاش',
+                        default     => 'عند الاستلام',
+                    };
+
                     return [
                         'id' => $order->id,
                         'order_number' => $order->order_number,
-                        'customer_name' => $order->user->name ?? $order->recipient_name,
+                        'customer_name' => $order->recipient_name ?? $order->user?->name ?? 'زبون المتجر',
                         'total' => $order->total,
                         'formatted_total' => format_money($order->total),
-                        'status' => $order->status,
-                        'payment_status' => $order->payment_status,
+                        'status' => $order->status?->value ?? (string) $order->status,
+                        'status_label' => $statusLabel,
+                        'payment_status' => $order->payment_status?->value ?? (string) $order->payment_status,
+                        'payment_method' => $order->payment_method?->value ?? (string) $order->payment_method,
+                        'payment_method_label' => $paymentMethodLabel,
                         'created_at' => $order->created_at->format('Y-m-d H:i'),
                     ];
                 });
@@ -99,12 +110,16 @@ class DashboardController extends Controller
                         'change_percent' => $customersChange,
                     ],
                 ],
-                'recent_products' => $recentProducts,
-                'recent_orders' => $recentOrders,
+                'recentProducts' => $recentProducts,
+                'recentOrders' => $recentOrders,
             ];
         });
 
-        return response()->json($stats);
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json($data);
+        }
+
+        return view('admin.dashboard', $data);
     }
 
     /**

@@ -32,7 +32,11 @@ class AuthenticatedSessionController extends Controller
             app(\App\Services\CartMergeService::class)->merge(Auth::user(), $request->cookie('session_token'));
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        if (Auth::user()?->role === 'admin') {
+            return redirect()->intended('/admin');
+        }
+
+        return redirect()->intended(route('home'));
     }
 
     /**

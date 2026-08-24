@@ -1,36 +1,52 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html dir="rtl" lang="ar">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'كشك الورد') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <!-- Preconnect Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-        <!-- Scripts -->
+        <!-- Initial Session State Hydration for Alpine Stores -->
+        <script>
+            window.__INITIAL_CART_COUNT__ = {{ session('cart_count', 0) }};
+            window.__INITIAL_WISHLIST__ = @json(session('wishlist', []));
+        </script>
+
+        <!-- Vite Compiled Scripts & Styles -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-            @include('layouts.navigation')
+    <body class="font-body-ar bg-background text-neutral antialiased flex flex-col min-h-screen">
+        
+        <!-- Storefront Header -->
+        @include('partials.header')
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white dark:bg-gray-800 shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+        <!-- Page Heading (Optional) -->
+        @isset($header)
+            <div class="bg-tertiary-50 border-b border-neutral-100 py-6">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {{ $header }}
+                </div>
+            </div>
+        @endisset
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
-        </div>
+        <!-- Main Page Content Slot -->
+        <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {{ $slot ?? '' }}
+        </main>
+
+        <!-- Storefront Footer -->
+        @include('partials.footer')
+
+        <!-- Floating WhatsApp Support Button -->
+        <x-whatsapp-button />
+
+        <!-- Global Toast Notification Portal -->
+        <x-toast />
+
     </body>
 </html>

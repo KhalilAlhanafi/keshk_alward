@@ -44,4 +44,14 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    public function getNameAttribute(): string
+    {
+        return (string) $this->name_ar;
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? asset('storage/' . $this->image_path) : null;
+    }
 }

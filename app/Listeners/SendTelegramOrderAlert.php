@@ -6,13 +6,8 @@ use App\Events\OrderPlaced;
 use App\Services\TelegramNotifierService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendTelegramOrderAlert implements ShouldQueue
+class SendTelegramOrderAlert
 {
-    /**
-     * Use the dedicated notifications queue so this doesn't block
-     * other background work and gets processed with high priority.
-     */
-    public string $queue = 'notifications';
 
     /**
      * Retry up to 3 times if Telegram API is temporarily unavailable.

@@ -28,9 +28,19 @@ class OrderController extends Controller
      */
     public function store(StoreOrderRequest $request): JsonResponse
     {
-        $cart = Cart::where('user_id', auth()->id())
-            ->with(['items.product', 'items.size', 'items.addons.addon'])
-            ->firstOrFail();
+        $cart = Cart::where(function($q) use ($request) {
+            if (auth()->check()) {
+                $q->where('user_id', auth()->id());
+            } else {
+                $q->where('session_token', $request->cookie('session_token'));
+            }
+        })
+        ->with(['items.product', 'items.size', 'items.addons.addon'])
+        ->first();
+
+        if (!$cart || $cart->items->isEmpty()) {
+            return response()->json(['message' => 'سلة التسوق فارغة.'], 422);
+        }
 
         try {
             $order = $this->orderService->placeOrder($cart, $request->validated());

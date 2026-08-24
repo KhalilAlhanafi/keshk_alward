@@ -14,57 +14,80 @@ class CatalogController extends Controller
      * Display a listing of products with filters.
      * Results are cached per unique filter/sort/page combination (15 min TTL).
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
-        // Build a normalized params array for the cache key
+        // Build a normalized params array for the query
         $params = [
-            'category_id' => $request->input('category_id'),
-            'min_price'   => $request->input('min_price'),
-            'max_price'   => $request->input('max_price'),
-            'sort_by'     => $request->input('sort_by', 'newest'),
-            'page'        => $request->input('page', 1),
-            'per_page'    => 12,
+            'category'   => $request->input('category') ?: $request->input('category_id'),
+            'search'     => $request->input('search') ?: $request->input('q'),
+            'min_price'  => $request->input('min_price'),
+            'max_price'  => $request->input('max_price'),
+            'sort_by'    => $request->input('sort_by') ?: $request->input('sort', 'newest'),
+            'page'       => $request->input('page', 1),
+            'per_page'   => 12,
         ];
 
-        $result = CacheService::rememberCatalog($params, function () use ($params) {
-            // Eager load category and sizes to prevent N+1 queries
-            $query = Product::with(['category', 'sizes'])->where('is_active', true);
+        // Active parent categories for filter sidebar
+        $categories = Cache::remember(CacheService::KEY_CATEGORIES_ACTIVE, CacheService::TTL_CATEGORIES, function () {
+            return \App\Models\Category::whereNull('parent_id')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get();
+        });
 
-            // Filter by category
-            if (!empty($params['category_id'])) {
-                $query->where('category_id', (int) $params['category_id']);
+        // Query logic
+        $query = Product::with(['category', 'sizes'])->where('is_active', true);
+
+        // Category filter
+        if (!empty($params['category'])) {
+            if (is_numeric($params['category'])) {
+                $query->where('category_id', (int) $params['category']);
+            } else {
+                $cat = \App\Models\Category::where('slug', $params['category'])->first();
+                if ($cat) {
+                    $query->where('category_id', $cat->id);
+                }
             }
+        }
 
-            // Filter by min price
-            if (!empty($params['min_price'])) {
-                $query->where('base_price', '>=', (int) $params['min_price']);
-            }
+        // Arabic search filter
+        if (!empty($params['search'])) {
+            $searchTerm = '%' . trim($params['search']) . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name_ar', 'like', $searchTerm)
+                  ->orWhere('description', 'like', $searchTerm);
+            });
+        }
 
-            // Filter by max price
-            if (!empty($params['max_price'])) {
-                $query->where('base_price', '<=', (int) $params['max_price']);
-            }
+        // Min & Max Price filter
+        if (!empty($params['min_price'])) {
+            $query->where('base_price', '>=', (int) $params['min_price']);
+        }
+        if (!empty($params['max_price'])) {
+            $query->where('base_price', '<=', (int) $params['max_price']);
+        }
 
-            // Sorting
-            switch ($params['sort_by']) {
-                case 'price_asc':
-                    $query->orderBy('base_price', 'asc');
-                    break;
-                case 'price_desc':
-                    $query->orderBy('base_price', 'desc');
-                    break;
-                case 'best_seller':
-                    $query->orderBy('is_best_seller', 'desc')->orderBy('created_at', 'desc');
-                    break;
-                case 'newest':
-                default:
-                    $query->orderBy('created_at', 'desc');
-                    break;
-            }
+        // Sorting
+        switch ($params['sort_by']) {
+            case 'price_asc':
+                $query->orderBy('base_price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('base_price', 'desc');
+                break;
+            case 'best_seller':
+                $query->orderBy('is_best_seller', 'desc')->orderBy('created_at', 'desc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
 
-            $products = $query->paginate($params['per_page']);
+        $products = $query->paginate($params['per_page'])->withQueryString();
 
-            return [
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
                 'products' => $products->items(),
                 'pagination' => [
                     'current_page' => $products->currentPage(),
@@ -74,24 +97,48 @@ class CatalogController extends Controller
                     'next_page_url' => $products->nextPageUrl(),
                     'prev_page_url' => $products->previousPageUrl(),
                 ],
-            ];
-        });
+            ]);
+        }
 
-        return response()->json($result);
+        $allProducts = Product::with(['category', 'sizes'])->where('is_active', true)->orderBy('created_at', 'desc')->get();
+
+        return view('catalog.index', compact('products', 'categories', 'params', 'allProducts'));
     }
 
     /**
-     * Display a single product with sizes and active addons.
+     * Display a single product with sizes, active addons, and related products.
      */
-    public function show($slug): JsonResponse
+    public function show(Request $request, $slug): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $product = Product::with(['category', 'sizes', 'addons' => function ($query) {
             $query->where('is_active', true);
-        }])->where('slug', $slug)
-          ->where('is_active', true)
-          ->firstOrFail();
+        }])->where(function($q) use ($slug) {
+            $q->where('slug', $slug)->orWhere('id', is_numeric($slug) ? (int)$slug : 0);
+        })
+        ->where('is_active', true)
+        ->firstOrFail();
 
-        return response()->json($product);
+        // Related products in same category
+        $relatedProducts = Product::where('is_active', true)
+            ->where('id', '!=', $product->id)
+            ->when($product->category_id, function($q) use ($product) {
+                $q->where('category_id', $product->category_id);
+            })
+            ->take(4)
+            ->get();
+
+        if ($relatedProducts->isEmpty()) {
+            $relatedProducts = Product::where('is_active', true)->where('id', '!=', $product->id)->take(4)->get();
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'product' => $product,
+                'related_products' => $relatedProducts
+            ]);
+        }
+
+        return view('catalog.show', compact('product', 'relatedProducts'));
     }
 
     /**

@@ -21,13 +21,24 @@ class CheckoutController extends Controller
      */
     public function show(Request $request): View
     {
-        $cart = Cart::where('user_id', auth()->id())
-            ->with(['items.product', 'items.size', 'items.addons.addon'])
-            ->firstOrFail();
+        $cart = Cart::where(function($q) {
+            if (auth()->check()) {
+                $q->where('user_id', auth()->id());
+            } else {
+                $q->where('session_token', request()->cookie('session_token'));
+            }
+        })->with(['items.product', 'items.size'])->first();
 
-        // Calculate initial totals (with 0 delivery fee initially, or default)
-        $totals = $this->totalsService->calculate($cart, 0);
+        if (!$cart || $cart->items->isEmpty()) {
+            return redirect()->route('cart.index');
+        }
 
-        return view('checkout', compact('cart', 'totals'));
+        $deliveryAreas = \App\Models\DeliveryArea::where('is_active', true)->get();
+        $cities = $deliveryAreas->pluck('city_ar')->unique();
+
+        $initialFee = $deliveryAreas->first()?->delivery_fee ?? 5000;
+        $totals = $this->totalsService->calculate($cart, $initialFee);
+
+        return view('checkout', compact('cart', 'totals', 'deliveryAreas', 'cities'));
     }
 }

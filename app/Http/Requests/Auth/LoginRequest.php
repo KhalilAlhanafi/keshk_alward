@@ -54,7 +54,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'login' => trans('auth.failed'),
+                'login' => 'بيانات الدخول غير صحيحة. يرجى التأكد من اسم المستخدم/الهاتف وكلمة المرور.',
             ]);
         }
 

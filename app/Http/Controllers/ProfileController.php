@@ -16,9 +16,16 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        $user = $request->user();
+        $orders = \App\Models\Order::where('user_id', $user->id)
+            ->with(['items.product'])
+            ->latest()
+            ->get();
+
+        $wishlistIds = session('wishlist', []);
+        $wishlistProducts = \App\Models\Product::whereIn('id', $wishlistIds)->get();
+
+        return view('profile.edit', compact('user', 'orders', 'wishlistProducts'));
     }
 
     /**

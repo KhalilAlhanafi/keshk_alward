@@ -14,10 +14,15 @@ class SettingController extends Controller
     /**
      * Get all settings.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $settings = Setting::all()->pluck('value', 'key');
-        return response()->json($settings);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($settings);
+        }
+
+        return view('admin.settings.index', compact('settings'));
     }
 
     /**

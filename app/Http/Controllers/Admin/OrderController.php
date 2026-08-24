@@ -18,7 +18,10 @@ class OrderController extends Controller
     /**
      * Display a listing of orders with filters.
      */
-    public function index(Request $request): JsonResponse
+    /**
+     * Display a listing of orders with filters.
+     */
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $query = Order::with(['user', 'deliveryArea']);
 
@@ -27,48 +30,45 @@ class OrderController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        // Filter by date range
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->input('date_from'));
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->input('date_to'));
-        }
-
-        // Search by order_number, customer name/phone, or recipient name/phone
+        // Filter by search
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
                   ->orWhere('recipient_name', 'like', "%{$search}%")
-                  ->orWhere('recipient_phone', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                  });
+                  ->orWhere('recipient_phone', 'like', "%{$search}%");
             });
         }
 
-        $orders = $query->latest()->paginate(15);
+        $orders = $query->latest()->paginate(15)->withQueryString();
 
-        return response()->json([
-            'data' => $orders->items(),
-            'pagination' => [
-                'current_page' => $orders->currentPage(),
-                'last_page' => $orders->lastPage(),
-                'per_page' => $orders->perPage(),
-                'total' => $orders->total(),
-            ]
-        ]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'data' => $orders->items(),
+                'pagination' => [
+                    'current_page' => $orders->currentPage(),
+                    'last_page' => $orders->lastPage(),
+                    'per_page' => $orders->perPage(),
+                    'total' => $orders->total(),
+                ]
+            ]);
+        }
+
+        return view('admin.orders.index', compact('orders'));
     }
 
     /**
      * Display the specified order details.
      */
-    public function show(Order $order): JsonResponse
+    public function show(Request $request, Order $order): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $order->load(['items.addons', 'user', 'deliveryArea', 'transactions']);
-        return response()->json($order);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($order);
+        }
+
+        return view('admin.orders.show', compact('order'));
     }
 
     /**

@@ -12,9 +12,9 @@ class CustomerController extends Controller
     /**
      * Display a listing of customers.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
-        $query = User::role('customer');
+        $query = User::where('role', 'customer');
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -25,10 +25,16 @@ class CustomerController extends Controller
             });
         }
 
-        // Surfacing order count
         $customers = $query->withCount('orders')
             ->latest()
-            ->paginate(15);
+            ->paginate(15)->withQueryString();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($customers);
+        }
+
+        return view('admin.customers.index', compact('customers'));
+    }
 
         // Map to include total spend
         $items = collect($customers->items())->map(function ($user) {

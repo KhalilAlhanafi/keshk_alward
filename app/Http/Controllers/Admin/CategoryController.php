@@ -17,13 +17,17 @@ class CategoryController extends Controller
     /**
      * Display a listing of categories.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $categories = Category::with('parent')
             ->orderBy('sort_order')
             ->get();
 
-        return response()->json($categories);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($categories);
+        }
+
+        return view('admin.categories.index', compact('categories'));
     }
 
     /**

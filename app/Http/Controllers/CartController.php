@@ -42,33 +42,42 @@ class CartController extends Controller
     /**
      * Display the cart items and totals.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $cart = $this->getOrCreateCart($request);
-        
-        // Eager load relations to prevent N+1 queries
         $cart->load(['items.product', 'items.size']);
 
         $totals = $this->totalsService->calculate($cart);
+        $items = $cart->items->map(function ($item) {
+            $unitPrice = $item->size ? $item->size->price : ($item->product->base_price ?? 0);
+            return [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product?->name ?? 'منتج فاخر',
+                'product_image' => $item->product?->primary_image_url ?? 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=300&q=80',
+                'product_slug' => $item->product?->slug ?? $item->product_id,
+                'size_id' => $item->product_size_id,
+                'size_label' => $item->size ? $item->size->name : null,
+                'unit_price' => $unitPrice,
+                'formatted_unit_price' => format_money($unitPrice),
+                'quantity' => $item->quantity,
+                'message' => $item->message,
+                'subtotal' => $unitPrice * $item->quantity,
+                'formatted_subtotal' => format_money($unitPrice * $item->quantity),
+            ];
+        });
 
-        return response()->json([
-            'items' => $cart->items->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name_ar,
-                    'size_id' => $item->product_size_id,
-                    'size_label' => $item->size ? $item->size->label_ar : null,
-                    'unit_price' => $item->size ? $item->size->price : $item->product->base_price,
-                    'formatted_unit_price' => format_money($item->size ? $item->size->price : $item->product->base_price),
-                    'quantity' => $item->quantity,
-                    'message' => $item->message,
-                    'subtotal' => ($item->size ? $item->size->price : $item->product->base_price) * $item->quantity,
-                    'formatted_subtotal' => format_money(($item->size ? $item->size->price : $item->product->base_price) * $item->quantity),
-                ];
-            }),
-            'totals' => $totals,
-        ]);
+        $cartCount = $cart->items->sum('quantity');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'items' => $items,
+                'totals' => $totals,
+                'cart_count' => $cartCount,
+            ]);
+        }
+
+        return view('cart', compact('cart', 'items', 'totals', 'cartCount'));
     }
 
     /**
@@ -78,35 +87,35 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => ['required', 'exists:products,id'],
-            'product_size_id' => ['required', 'exists:product_sizes,id'],
             'quantity' => ['required', 'integer', 'min:1'],
             'message' => ['nullable', 'string', 'max:500'],
         ]);
 
         $cart = $this->getOrCreateCart($request);
         $productId = $request->input('product_id');
-        $sizeId = $request->input('product_size_id');
-        $qty = $request->input('quantity');
+        $sizeId = $request->input('size_id') ?: $request->input('product_size_id');
+        $qty = $request->input('quantity', 1);
 
-        // Check stock levels
-        $size = ProductSize::findOrFail($sizeId);
-        if ($size->stock < $qty) {
-            return response()->json(['message' => 'الكمية المطلوبة غير متوفرة في المخزون.'], 422);
+        $product = Product::with('sizes')->findOrFail($productId);
+
+        if (!$sizeId && $product->sizes->count() > 0) {
+            $sizeId = $product->sizes->first()->id;
         }
 
         // Find or create item
-        $item = CartItem::where('cart_id', $cart->id)
-            ->where('product_id', $productId)
-            ->where('product_size_id', $sizeId)
-            ->first();
+        $itemQuery = CartItem::where('cart_id', $cart->id)
+            ->where('product_id', $productId);
+            
+        if ($sizeId) {
+            $itemQuery->where('product_size_id', $sizeId);
+        }
+
+        $item = $itemQuery->first();
 
         if ($item) {
-            if ($size->stock < ($item->quantity + $qty)) {
-                return response()->json(['message' => 'الكمية الإجمالية تتجاوز المخزون المتوفر.'], 422);
-            }
             $item->quantity += $qty;
-            if ($request->has('message')) {
-                $item->message = $request->input('message');
+            if ($request->filled('personal_message') || $request->filled('message')) {
+                $item->message = $request->input('personal_message') ?: $request->input('message');
             }
             $item->save();
         } else {
@@ -115,7 +124,7 @@ class CartController extends Controller
                 'product_id' => $productId,
                 'product_size_id' => $sizeId,
                 'quantity' => $qty,
-                'message' => $request->input('message'),
+                'message' => $request->input('personal_message') ?: $request->input('message'),
             ]);
         }
 
@@ -129,23 +138,12 @@ class CartController extends Controller
     {
         $request->validate([
             'quantity' => ['required', 'integer', 'min:1'],
-            'message' => ['nullable', 'string', 'max:500'],
         ]);
 
         $cart = $this->getOrCreateCart($request);
         $item = CartItem::where('cart_id', $cart->id)->findOrFail($id);
-        $qty = $request->input('quantity');
-
-        // Check stock
-        $size = ProductSize::findOrFail($item->product_size_id);
-        if ($size->stock < $qty) {
-            return response()->json(['message' => 'الكمية المطلوبة غير متوفرة في المخزون.'], 422);
-        }
-
-        $item->quantity = $qty;
-        if ($request->has('message')) {
-            $item->message = $request->input('message');
-        }
+        
+        $item->quantity = (int) $request->input('quantity');
         $item->save();
 
         return $this->index($request);

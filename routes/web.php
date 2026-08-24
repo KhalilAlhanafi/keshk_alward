@@ -13,6 +13,20 @@ use Illuminate\Support\Facades\DB;
 //  Public Routes
 // ───────────────────────────────────────────────────────────
 
+// Phase 1 Test Route & Styleguide
+Route::get('/phase1-test', function () {
+    return view('layouts.test');
+})->name('phase1.test');
+
+Route::get('/dev/styleguide', function () {
+    return view('components.dev');
+})->name('dev.styleguide');
+
+// Phase 2 Components Demo Route
+Route::get('/phase2-components', function () {
+    return view('components.dev');
+})->name('phase2.components');
+
 Route::get('/', HomepageController::class)->name('home');
 
 // Catalog & Products
@@ -40,8 +54,11 @@ Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wi
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->middleware('verified')->name('dashboard');
+        if (auth()->user()?->role === 'admin') {
+            return redirect('/admin');
+        }
+        return redirect()->route('profile.edit');
+    })->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -65,10 +82,14 @@ Route::get('/api/delivery-areas', \App\Http\Controllers\DeliveryAreaController::
 Route::get('/delivery-areas', \App\Http\Controllers\DeliveryAreaController::class);
 
 // ───────────────────────────────────────────────────────────
-//  Admin Routes
-// ───────────────────────────────────────────────────────────
+// Dedicated High-Security Admin Authentication Routes
+Route::get('/admin/login', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+Route::post('/admin/login', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'login'])->name('admin.login.store');
+Route::post('/admin/logout', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'logout'])->name('admin.logout');
 
-Route::middleware(['auth', 'role:admin|store_manager'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
+    Route::redirect('/', '/admin/dashboard');
+
     // Dashboard Stats
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 

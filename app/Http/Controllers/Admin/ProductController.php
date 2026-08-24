@@ -23,42 +23,34 @@ class ProductController extends Controller
     /**
      * Display a listing of the products.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $query = Product::with(['category', 'sizes']);
 
-        // Search by name or SKU
+        // Search by name
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name_ar', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
+                  ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        // Filter by status (is_active)
-        if ($request->filled('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
+        $products = $query->latest()->paginate(15)->withQueryString();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'data' => $products->items(),
+                'pagination' => [
+                    'current_page' => $products->currentPage(),
+                    'last_page' => $products->lastPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                ]
+            ]);
         }
 
-        // Filter by low stock
-        if ($request->boolean('low_stock')) {
-            $query->whereHas('sizes', function ($q) {
-                $q->where('stock', '<', 5);
-            });
-        }
-
-        $products = $query->latest()->paginate(15);
-
-        return response()->json([
-            'data' => $products->items(),
-            'pagination' => [
-                'current_page' => $products->currentPage(),
-                'last_page' => $products->lastPage(),
-                'per_page' => $products->perPage(),
-                'total' => $products->total(),
-            ]
-        ]);
+        return view('admin.products.index', compact('products'));
     }
 
     /**
