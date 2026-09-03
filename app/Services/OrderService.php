@@ -90,7 +90,8 @@ class OrderService
                 
                 $size = $lockedSizes->get($item->product_size_id);
                 if (!$size || $size->stock < $item->quantity) {
-                    throw new \RuntimeException("الكمية المطلوبة من المنتج '{$item->product->name_ar}' غير متوفرة في المخزون.");
+                    $prodName = $item->product?->name ?? $item->product?->name_ar ?? 'المحدد';
+                    throw new \RuntimeException("الكمية المطلوبة من المنتج '{$prodName}' غير متوفرة في المخزون حالياً.");
                 }
             }
 
@@ -134,6 +135,7 @@ class OrderService
                     'product_id' => $item->product_id,
                     'product_name_snapshot' => $item->product->name_ar,
                     'size_label_snapshot' => $item->size ? $item->size->label_ar : 'لا يوجد',
+                    'wrapping_color' => $item->wrapping_color,
                     'unit_price' => $unitPrice,
                     'quantity' => $item->quantity,
                     'message' => $item->message,

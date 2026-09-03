@@ -22,8 +22,9 @@ class ProfileController extends Controller
             ->latest()
             ->get();
 
-        $wishlistIds = session('wishlist', []);
-        $wishlistProducts = \App\Models\Product::whereIn('id', $wishlistIds)->get();
+        $wishlistProductIds = \App\Models\Wishlist::where('user_id', $user->id)
+            ->pluck('product_id');
+        $wishlistProducts = \App\Models\Product::whereIn('id', $wishlistProductIds)->get();
 
         return view('profile.edit', compact('user', 'orders', 'wishlistProducts'));
     }

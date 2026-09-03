@@ -193,6 +193,78 @@ test('admin can manage products CRUD', function () {
     expect(Product::find($productId))->toBeNull();
 });
 
+test('admin can upload product with image variant processing and long image_path', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    $admin = makeAdminUser('admin');
+    $category = Category::create(['name_ar' => 'شوكولا وهدايا', 'slug' => 'chocolates']);
+
+    $image = \Illuminate\Http\UploadedFile::fake()->image('chocolate.jpg', 600, 600);
+
+    $response = $this->actingAs($admin)->post('/admin/products', [
+        'category_id' => $category->id,
+        'name_ar' => 'شوكولا ميلكا',
+        'description' => 'علبة خشب مع شوكولا',
+        'sku' => 'KW-9904',
+        'base_price' => 70000,
+        'image' => $image,
+        'is_best_seller' => false,
+        'is_active' => true,
+    ], ['Accept' => 'application/json']);
+
+    $response->assertStatus(210);
+    $product = Product::where('sku', 'KW-9904')->first();
+    expect($product)->not->toBeNull()
+        ->and($product->image_path)->not->toBeNull()
+        ->and($product->primary_image_url)->toContain('storage/products/');
+});
+
+test('admin can upload multiple images, customize arrangement details, and omit sku', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    $admin = makeAdminUser('admin');
+    $category = Category::create(['name_ar' => 'باقات خاصة', 'slug' => 'special-bouquets']);
+
+    $img1 = \Illuminate\Http\UploadedFile::fake()->image('angle1.jpg', 600, 600);
+    $img2 = \Illuminate\Http\UploadedFile::fake()->image('angle2.png', 600, 600);
+
+    // 1. Create with multiple images and arrangement details without explicit sku
+    $response = $this->actingAs($admin)->post('/admin/products', [
+        'category_id' => $category->id,
+        'name_ar' => 'باقة الزنبق الملكي',
+        'description' => 'باقة زنبق أبيض فاخر',
+        'arrangement_details' => "10 زنابق بيضاء طبيعية\nتغليف كحلي مخملي\nشريط ذهبي مميز",
+        'base_price' => 120000,
+        'images' => [$img1, $img2],
+        'is_best_seller' => true,
+        'is_active' => true,
+    ], ['Accept' => 'application/json']);
+
+    $response->assertStatus(210);
+    $product = Product::where('name_ar', 'باقة الزنبق الملكي')->first();
+    expect($product)->not->toBeNull()
+        ->and($product->sku)->not->toBeEmpty()
+        ->and(count($product->gallery_urls))->toBe(2)
+        ->and($product->arrangement_points)->toHaveCount(3)
+        ->and($product->arrangement_points[0])->toBe('10 زنابق بيضاء طبيعية');
+
+    // 2. Update arrangement details and retain only 1 image
+    $firstImageUrl = $product->gallery_urls[0];
+    $updateResponse = $this->actingAs($admin)->post("/admin/products/{$product->id}", [
+        '_method' => 'PUT',
+        'category_id' => $category->id,
+        'name_ar' => 'باقة الزنبق الملكي الفاخرة',
+        'base_price' => 135000,
+        'arrangement_details' => "12 زنبق أبيض\nتغليف ذهبي فاخر",
+        'existing_images' => [$firstImageUrl],
+    ], ['Accept' => 'application/json']);
+
+    $updateResponse->assertStatus(200);
+    $product->refresh();
+    expect($product->name_ar)->toBe('باقة الزنبق الملكي الفاخرة')
+        ->and($product->base_price)->toBe(135000)
+        ->and(count($product->gallery_urls))->toBe(1)
+        ->and($product->arrangement_points)->toHaveCount(2);
+});
+
 // ─── Order Transition Tests ──────────────────────────────────────────────────
 
 test('admin can transition order status', function () {
@@ -247,3 +319,106 @@ test('admin can read and write settings', function () {
         ->assertStatus(200)
         ->assertJsonFragment(['sham_cash_wallet_code' => '0963933333333']);
 });
+
+// ─── Category CRUD Tests ─────────────────────────────────────────────────────
+
+test('admin can manage categories CRUD and observe linked products count', function () {
+    $admin = makeAdminUser('admin');
+
+    // 1. Create Category
+    $response = $this->actingAs($admin)->postJson('/admin/categories', [
+        'name_ar' => 'زهور التوليب',
+        'sort_order' => 2,
+        'is_active' => true,
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('category.name_ar', 'زهور التوليب');
+
+    $categoryId = $response->json('category.id');
+
+    // 2. Read Category
+    $this->getJson("/admin/categories/{$categoryId}")
+        ->assertStatus(200)
+        ->assertJsonPath('name_ar', 'زهور التوليب');
+
+    // 3. Update Category
+    $this->putJson("/admin/categories/{$categoryId}", [
+        'name_ar' => 'زهور التوليب الملكية',
+        'sort_order' => 1,
+        'is_active' => true,
+    ])->assertStatus(200)
+      ->assertJsonPath('category.name_ar', 'زهور التوليب الملكية');
+
+    // 4. Delete Category
+    $this->deleteJson("/admin/categories/{$categoryId}")
+        ->assertStatus(200);
+
+    expect(Category::find($categoryId))->toBeNull();
+});
+
+// ─── Delivery Area CRUD Tests ────────────────────────────────────────────────
+
+test('admin can manage delivery areas CRUD', function () {
+    $admin = makeAdminUser('admin');
+
+    // 1. Create Area
+    $response = $this->actingAs($admin)->postJson('/admin/delivery-areas', [
+        'city_ar' => 'دمشق',
+        'area_ar' => 'المالكي',
+        'delivery_fee' => 18000,
+        'is_active' => true,
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('delivery_area.area_ar', 'المالكي');
+
+    $areaId = $response->json('delivery_area.id');
+
+    // 2. Read Area
+    $this->getJson("/admin/delivery-areas/{$areaId}")
+        ->assertStatus(200)
+        ->assertJsonPath('area_ar', 'المالكي');
+
+    // 3. Update Area
+    $this->putJson("/admin/delivery-areas/{$areaId}", [
+        'city_ar' => 'دمشق',
+        'area_ar' => 'المالكي والروضة',
+        'delivery_fee' => 20000,
+        'is_active' => true,
+    ])->assertStatus(200)
+      ->assertJsonPath('delivery_area.delivery_fee', 20000);
+
+    // 4. Delete Area
+    $this->deleteJson("/admin/delivery-areas/{$areaId}")
+        ->assertStatus(200);
+
+    expect(DeliveryArea::find($areaId))->toBeNull();
+});
+
+// ─── Validation Enforcement Tests ────────────────────────────────────────────
+
+test('validation rejects invalid product, category and delivery area submissions', function () {
+    $admin = makeAdminUser('admin');
+
+    // Product validation error (missing required fields, negative price)
+    $this->actingAs($admin)->postJson('/admin/products', [
+        'name_ar' => '',
+        'base_price' => -500,
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors(['category_id', 'name_ar', 'base_price']);
+
+    // Category validation error (empty name)
+    $this->actingAs($admin)->postJson('/admin/categories', [
+        'name_ar' => '',
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors(['name_ar']);
+
+    // Delivery area validation error (empty fields, negative fee)
+    $this->actingAs($admin)->postJson('/admin/delivery-areas', [
+        'city_ar' => '',
+        'delivery_fee' => -100,
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors(['city_ar', 'area_ar', 'delivery_fee']);
+});
+

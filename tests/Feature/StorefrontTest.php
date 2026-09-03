@@ -127,6 +127,46 @@ test('authenticated user can add item to cart', function () {
     $response->assertJsonPath('items.0.quantity', 1);
 });
 
+test('user can add item to cart with selected wrapping color and place order', function () {
+    [$product, $size] = makeProductWithSize('rose-gold-wrap', 75000);
+    $user = makeUser('+963977888888');
+
+    $response = $this->actingAs($user)
+        ->postJson('/cart', [
+            'product_id' => $product->id,
+            'product_size_id' => $size->id,
+            'wrapping_color' => 'ذهبي فاخر',
+            'quantity' => 2,
+        ]);
+
+    $response->assertStatus(200);
+    $response->assertJsonPath('items.0.wrapping_color', 'ذهبي فاخر');
+
+    $cart = Cart::where('user_id', $user->id)->first();
+    expect($cart->items->first()->wrapping_color)->toBe('ذهبي فاخر');
+
+    // Place order and ensure wrapping_color is snapshotted on order_items
+    $deliveryArea = DeliveryArea::create([
+        'city_ar' => 'دمشق',
+        'area_ar' => 'المزة',
+        'delivery_fee' => 15000,
+        'is_active' => true,
+    ]);
+
+    $orderService = app(\App\Services\OrderService::class);
+    $order = $orderService->placeOrder($cart, [
+        'delivery_area_id' => $deliveryArea->id,
+        'recipient_name' => 'محمد أحمد',
+        'recipient_phone' => '+963977888888',
+        'delivery_address' => 'المزة - فيلات غربية',
+        'delivery_date' => now()->addDays(1)->format('Y-m-d'),
+        'delivery_time_slot' => '10:00 - 14:00',
+        'payment_method' => 'cod',
+    ]);
+
+    expect($order->items->first()->wrapping_color)->toBe('ذهبي فاخر');
+});
+
 // ─── Wishlist API Tests ───────────────────────────────────────────────────────
 
 test('authenticated user can toggle wishlist', function () {
@@ -149,6 +189,20 @@ test('authenticated user can toggle wishlist', function () {
     $removeResponse->assertStatus(200);
     $removeResponse->assertJsonPath('status', 'removed');
     $removeResponse->assertJsonPath('count', 0);
+});
+
+test('profile page displays wishlisted products from database', function () {
+    [$product, $size] = makeProductWithSize('orchid-wish', 65000);
+    $user = makeUser('+963977333333');
+
+    \App\Models\Wishlist::create([
+        'user_id' => $user->id,
+        'product_id' => $product->id,
+    ]);
+
+    $response = $this->actingAs($user)->get('/profile');
+    $response->assertStatus(200);
+    $response->assertSee($product->name_ar);
 });
 
 // ─── OrderService & Checkout Tests ───────────────────────────────────────────
@@ -219,10 +273,7 @@ test('OrderService places order, snapshots addons, and decrements stock', functi
     Event::assertDispatched(OrderPlaced::class);
 });
 
-test('same-day delivery cutoff validation works', function () {
-    // Travel to Damascus 19:30 (7:30 PM), past the 18:00 cutoff time
-    $this->travelTo(now()->setTimezone('Asia/Damascus')->setTime(19, 30, 0));
-
+test('same-day delivery cutoff validation works at 21:00 (9 PM)', function () {
     $user = makeUser('+963988888888');
     $area = DeliveryArea::create([
         'city_ar' => 'دمشق',
@@ -231,18 +282,42 @@ test('same-day delivery cutoff validation works', function () {
         'is_active' => true,
     ]);
 
-    $response = $this->actingAs($user)->postJson('/orders', [
+    // 1. Travel to Damascus 20:00 (8:00 PM) - before 21:00 cutoff: order should succeed
+    $this->travelTo(now()->setTimezone('Asia/Damascus')->setTime(20, 0, 0));
+    $cart = Cart::create(['user_id' => $user->id]);
+    [$product, $size] = makeProductWithSize('flower_late', 50000);
+    CartItem::create([
+        'cart_id' => $cart->id,
+        'product_id' => $product->id,
+        'product_size_id' => $size->id,
+        'quantity' => 1,
+    ]);
+
+    $validResponse = $this->actingAs($user)->postJson('/orders', [
         'recipient_name' => 'أحمد',
         'recipient_phone' => '+963966666666',
         'delivery_area_id' => $area->id,
         'delivery_address' => 'العدوي',
         'delivery_date' => now()->setTimezone('Asia/Damascus')->format('Y-m-d'), // Today
-        'delivery_time_slot' => '18:00 - 21:00',
+        'delivery_time_slot' => '21:00 - 23:00',
+        'payment_method' => 'cod',
+    ]);
+    $validResponse->assertStatus(200);
+
+    // 2. Travel to Damascus 21:30 (9:30 PM) - past 21:00 cutoff: order for same day should be rejected
+    $this->travelTo(now()->setTimezone('Asia/Damascus')->setTime(21, 30, 0));
+    $invalidResponse = $this->actingAs($user)->postJson('/orders', [
+        'recipient_name' => 'أحمد',
+        'recipient_phone' => '+963966666666',
+        'delivery_area_id' => $area->id,
+        'delivery_address' => 'العدوي',
+        'delivery_date' => now()->setTimezone('Asia/Damascus')->format('Y-m-d'), // Today
+        'delivery_time_slot' => '21:00 - 23:00',
         'payment_method' => 'cod',
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors('delivery_date');
+    $invalidResponse->assertStatus(422);
+    $invalidResponse->assertJsonValidationErrors('delivery_date');
 });
 
 test('Sham Cash order retrieval displays wallet code from setting', function () {
@@ -314,8 +389,8 @@ test('Product show API returns product with relations', function () {
     $response = $this->getJson("/products/{$product->slug}");
 
     $response->assertStatus(200)
-        ->assertJsonPath('slug', $product->slug)
-        ->assertJsonPath('sizes.0.id', $size->id);
+        ->assertJsonPath('product.slug', $product->slug)
+        ->assertJsonPath('product.sizes.0.id', $size->id);
 });
 
 test('Product price-preview API computes live price with size and addons', function () {

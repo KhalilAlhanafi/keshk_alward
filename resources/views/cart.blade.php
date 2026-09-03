@@ -137,9 +137,15 @@
                             <div class="space-y-1">
                                 <a :href="'/products/' + item.product_slug" class="font-headline-ar text-base md:text-lg text-primary font-bold hover:text-primary-600 transition-colors line-clamp-1" x-text="item.product_name"></a>
                                 
-                                <template x-if="item.size_label">
-                                    <span class="inline-block bg-tertiary-100 text-primary-950 text-xs px-2.5 py-0.5 rounded-full font-medium" x-text="'الحجم: ' + item.size_label"></span>
-                                </template>
+                                <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                    <template x-if="item.size_label">
+                                        <span class="inline-block bg-tertiary-100 text-primary-950 text-xs px-2.5 py-0.5 rounded-full font-medium" x-text="'الحجم: ' + item.size_label"></span>
+                                    </template>
+
+                                    <template x-if="item.wrapping_color">
+                                        <span class="inline-flex items-center gap-1 bg-secondary/20 text-primary text-xs px-2.5 py-0.5 rounded-full font-medium" x-text="'تغليف: ' + item.wrapping_color"></span>
+                                    </template>
+                                </div>
 
                                 <div class="text-xs text-neutral-500 font-body" x-text="item.formatted_unit_price"></div>
                                 
@@ -208,10 +214,6 @@
                             </div>
                         </template>
 
-                        <div class="flex justify-between items-center">
-                            <span>رسوم التوصيل المقدرة</span>
-                            <span class="font-bold text-neutral-900 font-body" x-text="totals.formatted_delivery_fee"></span>
-                        </div>
 
                         <div class="border-t border-neutral-100 pt-3 flex justify-between items-center text-base md:text-lg">
                             <span class="font-bold text-primary">الإجمالي النهائي</span>

@@ -71,7 +71,21 @@
         <div class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
             
             <!-- Sidebar Navigation (1 Column on Desktop) -->
-            <aside class="lg:col-span-1 bg-surface rounded-card p-4 border border-neutral-100 shadow-soft space-y-1 font-body-ar sticky top-20">
+            <aside x-data="{ open: false }" class="lg:col-span-1 bg-surface rounded-card p-4 border border-neutral-100 shadow-soft font-body-ar lg:sticky lg:top-20">
+                
+                <!-- Mobile Toggle Button -->
+                <button @click="open = !open" type="button" class="lg:hidden flex items-center justify-between w-full font-bold text-sm text-primary mb-2 pb-2 border-b border-neutral-100">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        قائمة لوحة التحكم
+                    </span>
+                    <svg :class="{'rotate-180': open}" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <!-- Menu Links -->
+                <div x-cloak :class="{'hidden': !open, 'block': open}" class="lg:block space-y-1 mt-3 lg:mt-0">
                 <a 
                     href="{{ route('admin.dashboard') }}" 
                     class="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs md:text-sm transition-all {{ request()->routeIs('admin.dashboard') ? 'bg-primary text-white shadow-xs' : 'text-neutral-700 hover:bg-tertiary-100' }}"
@@ -127,6 +141,7 @@
                     <span>⚙️</span>
                     <span>إعدادات المتجر</span>
                 </a>
+                </div>
             </aside>
 
             <!-- Main Content Area (4 Columns on Desktop) -->

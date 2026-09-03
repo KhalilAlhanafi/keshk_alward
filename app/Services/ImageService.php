@@ -25,48 +25,61 @@ class ImageService
      * @param UploadedFile $file
      * @param string $directory Base storage directory (e.g. 'products')
      * @return array Array of variant paths keyed by size name
-     *               e.g. ['original' => '...', 'thumbnail' => '...', 'medium' => '...', 'large' => '...']
      */
     public function store(UploadedFile $file, string $directory = 'products'): array
     {
-        $manager = new ImageManager(new Driver());
-        $image = $manager->read($file->getRealPath());
+        try {
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file->getRealPath());
 
-        $baseName = Str::uuid()->toString();
-        $paths = [];
+            $baseName = Str::uuid()->toString();
+            $paths = [];
 
-        // Store original WebP (full-size, no resize)
-        $originalWebP = $image->toWebp(90)->toString();
-        $originalPath = "{$directory}/{$baseName}.webp";
-        Storage::disk('public')->put($originalPath, $originalWebP);
-        $paths['original'] = $originalPath;
+            // Store original WebP (full-size, no resize)
+            $originalWebP = $image->toWebp(90)->toString();
+            $originalPath = "{$directory}/{$baseName}.webp";
+            Storage::disk('public')->put($originalPath, $originalWebP);
+            $paths['original'] = $originalPath;
 
-        // Store fallback original JPEG
-        $originalJpeg = $image->toJpeg(90)->toString();
-        $originalFallbackPath = "{$directory}/{$baseName}.jpg";
-        Storage::disk('public')->put($originalFallbackPath, $originalJpeg);
-        $paths['original_fallback'] = $originalFallbackPath;
+            // Store fallback original JPEG
+            $originalJpeg = $image->toJpeg(90)->toString();
+            $originalFallbackPath = "{$directory}/{$baseName}.jpg";
+            Storage::disk('public')->put($originalFallbackPath, $originalJpeg);
+            $paths['original_fallback'] = $originalFallbackPath;
 
-        // Generate and store each variant
-        foreach ($this->sizes as $sizeName => [$width, $height, $quality]) {
-            // Clone to avoid mutating the original
-            $variant = $manager->read($file->getRealPath());
-            $variant->cover($width, $height);
+            // Generate and store each variant
+            foreach ($this->sizes as $sizeName => [$width, $height, $quality]) {
+                $variant = $manager->read($file->getRealPath());
+                $variant->cover($width, $height);
 
-            // Store WebP variant
-            $webpContent = $variant->toWebp($quality)->toString();
-            $webpPath = "{$directory}/{$baseName}_{$sizeName}.webp";
-            Storage::disk('public')->put($webpPath, $webpContent);
-            $paths[$sizeName] = $webpPath;
+                // Store WebP variant
+                $webpContent = $variant->toWebp($quality)->toString();
+                $webpPath = "{$directory}/{$baseName}_{$sizeName}.webp";
+                Storage::disk('public')->put($webpPath, $webpContent);
+                $paths[$sizeName] = $webpPath;
 
-            // Store JPEG fallback variant
-            $jpegContent = $variant->toJpeg($quality)->toString();
-            $jpegPath = "{$directory}/{$baseName}_{$sizeName}.jpg";
-            Storage::disk('public')->put($jpegPath, $jpegContent);
-            $paths["{$sizeName}_fallback"] = $jpegPath;
+                // Store JPEG fallback variant
+                $jpegContent = $variant->toJpeg($quality)->toString();
+                $jpegPath = "{$directory}/{$baseName}_{$sizeName}.jpg";
+                Storage::disk('public')->put($jpegPath, $jpegContent);
+                $paths["{$sizeName}_fallback"] = $jpegPath;
+            }
+
+            return $paths;
+        } catch (\Throwable $e) {
+            // Fallback: store raw file directly to disk
+            $path = $file->store($directory, 'public');
+            return [
+                'original' => $path,
+                'original_fallback' => $path,
+                'thumbnail' => $path,
+                'thumbnail_fallback' => $path,
+                'medium' => $path,
+                'medium_fallback' => $path,
+                'large' => $path,
+                'large_fallback' => $path,
+            ];
         }
-
-        return $paths;
     }
 
     /**
@@ -77,12 +90,16 @@ class ImageService
      */
     public function delete(string $path): void
     {
-        // $path may be "products/uuid_medium.webp" - we clean up all variants
-        // Extract base (without size suffix and extension)
+        if (empty($path)) return;
+
+        // Clean up direct file
+        Storage::disk('public')->delete($path);
+
+        // $path may be "products/uuid_medium.webp" - clean variants
         $withoutExt = pathinfo($path, PATHINFO_DIRNAME) . '/' . pathinfo($path, PATHINFO_FILENAME);
         $baseName = preg_replace('/_(thumbnail|medium|large|original)(_fallback)?$/', '', $withoutExt);
 
-        $extensions = ['webp', 'jpg'];
+        $extensions = ['webp', 'jpg', 'jpeg', 'png'];
         $variants = ['', '_thumbnail', '_medium', '_large'];
 
         foreach ($variants as $v) {
@@ -114,7 +131,6 @@ class ImageService
             'medium_fallback' => $srcset['medium_fallback'] ?? null,
             'large' => $srcset['large'] ?? null,
             'large_fallback' => $srcset['large_fallback'] ?? null,
-            // srcset string for <img> tag
             'srcset_webp' => implode(', ', array_filter([
                 isset($srcset['thumbnail']) ? $srcset['thumbnail'] . ' 150w' : null,
                 isset($srcset['medium']) ? $srcset['medium'] . ' 600w' : null,

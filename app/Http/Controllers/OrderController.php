@@ -98,13 +98,17 @@ class OrderController extends Controller
         // Validate request
         $validated = $request->validate([
             'proof_file' => 'nullable|image|max:5120', // Max 5MB image
-            'transaction_number' => 'nullable|string|max:100',
+            'transaction_number' => ['nullable', 'string', 'digits:9'],
+        ], [
+            'transaction_number.digits' => 'رقم عملية شام كاش يجب أن يتألف من 9 أرقام.',
+            'proof_file.image' => 'يجب أن يكون الملف المرفوع صورة صالحة.',
+            'proof_file.max' => 'حجم الصورة يجب ألا يتجاوز 5 ميغابايت.',
         ]);
 
         // Require at least one field
-        if (!$request->hasFile('proof_file') && !$request->transaction_number) {
+        if (!$request->hasFile('proof_file') && !$request->filled('transaction_number')) {
             return response()->json([
-                'message' => 'يجب رفع صورة الإيصال أو إدخال رقم العملية.'
+                'message' => 'يجب رفع صورة الإيصال أو إدخال رقم العملية (9 أرقام).'
             ], 422);
         }
 
@@ -113,11 +117,8 @@ class OrderController extends Controller
             if ($request->hasFile('proof_file')) {
                 $path = $request->file('proof_file')->store('payment-proofs', 'public');
                 $order->payment_proof = $path;
-            }
-
-            // Handle transaction number
-            if ($request->transaction_number) {
-                $order->payment_proof = $request->transaction_number;
+            } elseif ($request->filled('transaction_number')) {
+                $order->payment_proof = $request->input('transaction_number');
             }
 
             $order->save();
@@ -131,5 +132,26 @@ class OrderController extends Controller
                 'message' => 'حدث خطأ أثناء رفع إثبات الدفع.'
             ], 500);
         }
+    }
+
+    /**
+     * Cancel an order.
+     */
+    public function cancel(Order $order, \App\Services\TelegramNotifierService $telegram): RedirectResponse
+    {
+        // Policy: user can only cancel their own orders
+        abort_if(auth()->id() !== $order->user_id, 403);
+
+        if ($order->status === \App\Enums\OrderStatus::PENDING) {
+            $order->status = \App\Enums\OrderStatus::CANCELLED;
+            $order->save();
+
+            // Send Telegram Notification
+            $telegram->sendOrderCancelledAlert($order);
+
+            return redirect()->back()->with('success', 'تم إلغاء الطلب بنجاح.');
+        }
+
+        return redirect()->back()->with('error', 'لا يمكن إلغاء الطلب في هذه المرحلة.');
     }
 }

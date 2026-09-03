@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Http\Controllers;
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -20,6 +18,7 @@ class CategoryController extends Controller
     public function index(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
         $categories = Category::with('parent')
+            ->withCount('products')
             ->orderBy('sort_order')
             ->get();
 
@@ -38,9 +37,9 @@ class CategoryController extends Controller
         $request->validate([
             'name_ar' => ['required', 'string', 'max:255'],
             'parent_id' => ['nullable', 'exists:categories,id'],
-            'sort_order' => ['integer', 'min:0'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'image' => ['nullable', 'image', 'max:4096'],
         ]);
 
         $imagePath = null;
@@ -52,14 +51,14 @@ class CategoryController extends Controller
             'name_ar' => $request->input('name_ar'),
             'slug' => Str::slug($request->input('name_ar')) . '-' . uniqid(),
             'parent_id' => $request->input('parent_id'),
-            'sort_order' => $request->input('sort_order', 0),
+            'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->boolean('is_active', true),
             'image_path' => $imagePath,
         ]);
 
         return response()->json([
-            'message' => 'تم إنشاء التصنيف بنجاح.',
-            'category' => $category,
+            'message' => 'تم إنشاء القسم بنجاح.',
+            'category' => $category->loadCount('products'),
         ], 201);
     }
 
@@ -68,7 +67,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category): JsonResponse
     {
-        return response()->json($category->load(['children', 'parent']));
+        return response()->json($category->load(['children', 'parent'])->loadCount('products'));
     }
 
     /**
@@ -79,9 +78,9 @@ class CategoryController extends Controller
         $request->validate([
             'name_ar' => ['required', 'string', 'max:255'],
             'parent_id' => ['nullable', 'exists:categories,id', Rule::notIn([$category->id])],
-            'sort_order' => ['integer', 'min:0'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'image' => ['nullable', 'image', 'max:4096'],
         ]);
 
         $imagePath = $category->image_path;
@@ -95,14 +94,14 @@ class CategoryController extends Controller
         $category->update([
             'name_ar' => $request->input('name_ar'),
             'parent_id' => $request->input('parent_id'),
-            'sort_order' => $request->input('sort_order', 0),
+            'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->boolean('is_active', true),
             'image_path' => $imagePath,
         ]);
 
         return response()->json([
-            'message' => 'تم تحديث التصنيف بنجاح.',
-            'category' => $category,
+            'message' => 'تم تحديث بيانات القسم بنجاح.',
+            'category' => $category->loadCount('products'),
         ]);
     }
 
@@ -111,14 +110,21 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category): JsonResponse
     {
+        $productsCount = $category->products()->count();
+
         if ($category->image_path) {
             Storage::disk('public')->delete($category->image_path);
         }
 
         $category->delete();
 
+        $msg = $productsCount > 0 
+            ? "تم حذف القسم بنجاح (وتم معالجة {$productsCount} منتج مرتبط به)."
+            : "تم حذف القسم بنجاح.";
+
         return response()->json([
-            'message' => 'تم حذف التصنيف بنجاح.'
+            'message' => $msg,
+            'deleted_id' => $category->id
         ]);
     }
 }

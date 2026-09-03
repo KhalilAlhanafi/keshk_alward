@@ -34,6 +34,7 @@
                     <thead class="bg-tertiary-100 text-primary font-bold border-b border-neutral-200">
                         <tr>
                             <th class="p-3 text-start">رقم الطلب</th>
+                            <th class="p-3 text-start">تاريخ ووقت الطلب</th>
                             <th class="p-3 text-start">المستلم والهاتف</th>
                             <th class="p-3 text-start">منطقة التوصيل</th>
                             <th class="p-3 text-start">طريقة الدفع</th>
@@ -48,6 +49,9 @@
                                 <td class="p-3 font-bold font-body text-primary">
                                     {{ $ord->order_number }}
                                 </td>
+                                <td class="p-3 font-body text-neutral-600 text-[11px] whitespace-nowrap">
+                                    {{ $ord->created_at->format('Y-m-d — H:i') }}
+                                </td>
                                 <td class="p-3">
                                     <div class="font-bold text-neutral-800">{{ $ord->recipient_name }}</div>
                                     <div class="text-[11px] text-neutral-400 font-body" dir="ltr">{{ $ord->recipient_phone }}</div>
@@ -56,16 +60,25 @@
                                     {{ $ord->deliveryArea?->city_ar }} - {{ $ord->deliveryArea?->area_ar }}
                                 </td>
                                 <td class="p-3">
-                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold {{ $ord->payment_method->value === 'sham_cash' ? 'bg-secondary/30 text-primary-950' : 'bg-tertiary-100 text-neutral-800' }}">
-                                        {{ $ord->payment_method->labelAr() }}
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold {{ ($ord->payment_method?->value ?? (string)$ord->payment_method) === 'sham_cash' ? 'bg-secondary/30 text-primary-950' : 'bg-tertiary-100 text-neutral-800' }}">
+                                        {{ $ord->payment_method?->labelAr() ?? 'عند الاستلام' }}
                                     </span>
                                 </td>
                                 <td class="p-3 font-bold font-body text-neutral-900">
                                     {{ format_money($ord->total) }}
                                 </td>
                                 <td class="p-3">
-                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-warning/15 text-warning">
-                                        {{ $ord->status?->labelAr() ?? 'قيد المعالجة' }}
+                                    @php
+                                        $st = $ord->status instanceof \BackedEnum ? $ord->status->value : (string) $ord->status;
+                                        $badgeClass = match($st) {
+                                            'cancelled' => 'bg-red-100 text-red-700 border border-red-200',
+                                            'delivered' => 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                                            'confirmed' => 'bg-sky-100 text-sky-800 border border-sky-200',
+                                            default     => 'bg-amber-100 text-amber-800 border border-amber-200',
+                                        };
+                                    @endphp
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold {{ $badgeClass }}">
+                                        {{ $ord->status instanceof \App\Enums\OrderStatus ? $ord->status->labelAr() : (\App\Enums\OrderStatus::tryFrom((string)$ord->status)?->labelAr() ?? 'قيد المعالجة') }}
                                     </span>
                                 </td>
                                 <td class="p-3 text-center">
@@ -79,7 +92,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="p-6 text-center text-neutral-400">
+                                <td colspan="8" class="p-6 text-center text-neutral-400">
                                     لا توجد طلبات مسجلة
                                 </td>
                             </tr>

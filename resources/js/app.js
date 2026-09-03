@@ -32,17 +32,78 @@ document.addEventListener('alpine:init', () => {
     });
 
     Alpine.store('wishlist', {
-        items: window.__INITIAL_WISHLIST__ || [],
-        toggle(productId) {
-            const index = this.items.indexOf(productId);
-            if (index > -1) {
-                this.items.splice(index, 1);
-            } else {
-                this.items.push(productId);
-            }
-        },
+        items: (window.__INITIAL_WISHLIST__ || []).map(Number),
+        
         has(productId) {
-            return this.items.includes(productId);
+            return this.items.includes(Number(productId));
+        },
+        
+        setItems(newItems) {
+            this.items = (newItems || []).map(Number);
+        },
+
+        async toggle(productId) {
+            const id = Number(productId);
+            if (!id) return;
+
+            const exists = this.has(id);
+            
+            // 1. Optimistic UI update
+            if (exists) {
+                this.items = this.items.filter(i => i !== id);
+            } else {
+                this.items.push(id);
+            }
+
+            // 2. Server mutation
+            try {
+                const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                const response = await fetch('/wishlist/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ product_id: id })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    if (data.status === 'added' && !this.has(id)) {
+                        this.items.push(id);
+                    } else if (data.status === 'removed' && this.has(id)) {
+                        this.items = this.items.filter(i => i !== id);
+                    }
+
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { 
+                            message: data.message || (data.status === 'added' ? 'تمت إضافة الباقة إلى المفضلة' : 'تمت إزالة الباقة من المفضلة'), 
+                            type: 'success' 
+                        } 
+                    }));
+                } else {
+                    // Rollback
+                    if (exists) {
+                        this.items.push(id);
+                    } else {
+                        this.items = this.items.filter(i => i !== id);
+                    }
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { message: data.message || 'تعذر تحديث المفضلة', type: 'error' } 
+                    }));
+                }
+            } catch (err) {
+                // Rollback
+                if (exists) {
+                    this.items.push(id);
+                } else {
+                    this.items = this.items.filter(i => i !== id);
+                }
+                window.dispatchEvent(new CustomEvent('toast', { 
+                    detail: { message: 'حدث خطأ في الاتصال بالسيرفر', type: 'error' } 
+                }));
+            }
         }
     });
 });

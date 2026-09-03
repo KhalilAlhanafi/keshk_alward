@@ -72,12 +72,12 @@
                             required 
                             dir="ltr"
                             placeholder="••••••••"
-                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm text-start font-body text-neutral-800"
+                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl pe-4 ps-14 py-2.5 text-xs md:text-sm text-start font-body text-neutral-800"
                         >
                         <button 
                             type="button" 
                             @click="showPassword = !showPassword"
-                            class="absolute inset-y-0 end-0 flex items-center pe-3 text-neutral-400 hover:text-primary transition-colors text-xs font-medium"
+                            class="absolute inset-y-0 start-0 flex items-center ps-3 text-neutral-400 hover:text-primary transition-colors text-xs font-medium cursor-pointer"
                         >
                             <span x-text="showPassword ? 'إخفاء' : 'إظهار'"></span>
                         </button>
@@ -114,5 +114,37 @@
 
         </div>
 
+        <!-- Prevent Back-Forward Cache (BFCache) from showing stale login page -->
+        <script>
+            (function () {
+                function redirectIfBackOrAuth(event) {
+                    var isBackForward = false;
+                    if (event && event.persisted) {
+                        isBackForward = true;
+                    } else if (window.performance && window.performance.getEntriesByType) {
+                        var navEntries = window.performance.getEntriesByType('navigation');
+                        if (navEntries.length > 0 && navEntries[0].type === 'back_forward') {
+                            isBackForward = true;
+                        }
+                    } else if (window.performance && window.performance.navigation && window.performance.navigation.type === 2) {
+                        isBackForward = true;
+                    }
+
+                    if (isBackForward) {
+                        window.location.replace("{{ route('admin.dashboard') }}");
+                    }
+                }
+
+                window.addEventListener('pageshow', redirectIfBackOrAuth);
+
+                @auth
+                    @if (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin'))
+                        window.location.replace("{{ route('admin.dashboard') }}");
+                    @else
+                        window.location.replace("{{ route('home') }}");
+                    @endif
+                @endauth
+            })();
+        </script>
     </body>
 </html>

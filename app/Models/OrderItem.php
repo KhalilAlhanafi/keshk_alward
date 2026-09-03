@@ -13,6 +13,7 @@ class OrderItem extends Model
         'product_id',
         'product_name_snapshot',
         'size_label_snapshot',
+        'wrapping_color',
         'unit_price',
         'quantity',
         'message',

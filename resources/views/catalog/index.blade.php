@@ -340,12 +340,13 @@
 
                             <!-- Wishlist Heart Icon Button -->
                             <button 
-                                @click="toggleWishlist()"
+                                @click.stop.prevent="$store.wishlist.toggle(product.id)"
                                 type="button" 
-                                class="absolute top-2 end-2 p-1.5 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none cursor-pointer"
+                                class="absolute top-2 end-2 p-1.5 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none cursor-pointer z-10"
+                                :title="$store.wishlist.has(product.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
                                 aria-label="المفضلة"
                             >
-                                <svg class="w-4 h-4 transition-colors" :class="isWishlisted ? 'text-secondary fill-secondary' : 'text-neutral-400 fill-none'" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-4 h-4 transition-colors" :class="$store.wishlist.has(product.id) ? 'text-secondary fill-secondary' : 'text-neutral-400 fill-none'" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                 </svg>
                             </button>

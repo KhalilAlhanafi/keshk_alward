@@ -13,6 +13,9 @@ use App\Enums\PaymentStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+/** @var TestCase $this */
 
 uses(RefreshDatabase::class);
 

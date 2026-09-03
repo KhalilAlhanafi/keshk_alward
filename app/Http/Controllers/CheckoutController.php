@@ -19,7 +19,7 @@ class CheckoutController extends Controller
     /**
      * Show the checkout page.
      */
-    public function show(Request $request): View
+    public function show(Request $request): View|\Illuminate\Http\RedirectResponse
     {
         $cart = Cart::where(function($q) {
             if (auth()->check()) {
@@ -36,8 +36,7 @@ class CheckoutController extends Controller
         $deliveryAreas = \App\Models\DeliveryArea::where('is_active', true)->get();
         $cities = $deliveryAreas->pluck('city_ar')->unique();
 
-        $initialFee = $deliveryAreas->first()?->delivery_fee ?? 5000;
-        $totals = $this->totalsService->calculate($cart, $initialFee);
+        $totals = $this->totalsService->calculate($cart, 0);
 
         return view('checkout', compact('cart', 'totals', 'deliveryAreas', 'cities'));
     }

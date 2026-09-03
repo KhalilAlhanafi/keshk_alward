@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -15,9 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of orders with filters.
-     */
     /**
      * Display a listing of orders with filters.
      */
@@ -97,6 +95,15 @@ class OrderController extends Controller
 
         $order->save();
 
+        // Notify customer
+        try {
+            $statusLabel = $newStatus->labelAr();
+            $msg = "تم تحديث حالة طلبك #{$order->order_number} إلى: {$statusLabel}.";
+            $order->user?->notify(new \App\Notifications\OrderStatusUpdatedNotification($order, $msg, 'status_updated'));
+        } catch (\Throwable $e) {
+            Log::warning("Failed to notify user for order status update: " . $e->getMessage());
+        }
+
         // Trigger notification log
         Log::info("Order #{$order->order_number} status changed from {$oldStatus->value} to {$newStatus->value}. Triggering customer notification.");
 
@@ -111,41 +118,52 @@ class OrderController extends Controller
      */
     public function verifyPayment(Request $request, Order $order): JsonResponse
     {
-        // Check policy - only admins can verify payments
+        // Check policy - only admins and store managers can verify payments
         Gate::authorize('verifyPayment', $order);
 
-        // Only allow for ShamCash orders awaiting verification
-        if ($order->payment_method->value !== 'sham_cash' || 
-            $order->payment_status->value !== 'awaiting_verification') {
+        $paymentMethodVal = $order->payment_method instanceof \BackedEnum 
+            ? $order->payment_method->value 
+            : (string) $order->payment_method;
+
+        // Only allow for ShamCash orders
+        if ($paymentMethodVal !== 'sham_cash') {
             return response()->json([
-                'message' => 'هذا الطلب غير مؤهل للتحقق من الدفع.'
+                'message' => 'هذا الطلب غير مخصص لدفع شام كاش.'
             ], 422);
         }
 
         $request->validate([
             'action' => 'required|in:verify,reject',
-            'rejection_reason' => 'required_if:action,reject|string|max:500',
+            'rejection_reason' => 'nullable|required_if:action,reject|string|max:500',
+        ], [
+            'rejection_reason.required_if' => 'يرجى كتابة سبب الرفض.',
+            'rejection_reason.string' => 'يجب أن يكون سبب الرفض نصاً صالحاً.',
         ]);
 
         return DB::transaction(function () use ($request, $order) {
-            if ($request->action === 'verify') {
+            $action = $request->input('action');
+            $rejectionReason = $request->input('rejection_reason');
+
+            if ($action === 'verify') {
                 // Verify payment
                 $order->payment_status = PaymentStatus::VERIFIED;
                 $order->payment_verified_at = now();
-                $order->verified_by = auth()->id();
+                $order->verified_by = Auth::id();
                 $order->status = OrderStatus::CONFIRMED; // Move to confirmed
                 $order->rejection_reason = null;
 
                 Log::channel('payment')->info('Payment verified', [
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
-                    'verified_by' => auth()->id(),
+                    'verified_by' => Auth::id(),
                     'amount' => $order->total,
                 ]);
+
+                $notificationMsg = "تم التحقق من دفع شام كاش وتأكيد طلبك #{$order->order_number} بنجاح!";
             } else {
                 // Reject payment
                 $order->payment_status = PaymentStatus::REJECTED;
-                $order->rejection_reason = $request->rejection_reason;
+                $order->rejection_reason = $rejectionReason;
                 $order->status = OrderStatus::CANCELLED; // Cancel the order
 
                 // Restore stock
@@ -160,16 +178,25 @@ class OrderController extends Controller
                 Log::channel('payment')->warning('Payment rejected', [
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
-                    'rejected_by' => auth()->id(),
-                    'rejection_reason' => $request->rejection_reason,
+                    'rejected_by' => Auth::id(),
+                    'rejection_reason' => $rejectionReason,
                     'amount' => $order->total,
                 ]);
+
+                $notificationMsg = "تم رفض إثبات الدفع وإلغاء الطلب #{$order->order_number}." . ($rejectionReason ? " سبب الرفض: {$rejectionReason}" : "");
             }
 
             $order->save();
 
+            // Notify customer in database and mail
+            try {
+                $order->user?->notify(new \App\Notifications\OrderStatusUpdatedNotification($order, $notificationMsg, 'payment_review'));
+            } catch (\Throwable $e) {
+                Log::warning("Failed to notify user for order payment verification: " . $e->getMessage());
+            }
+
             return response()->json([
-                'message' => $request->action === 'verify' 
+                'message' => $action === 'verify' 
                     ? 'تم التحقق من الدفع بنجاح وتأكيد الطلب.' 
                     : 'تم رفض الدفع وإلغاء الطلب.',
                 'order' => $order->load(['user', 'deliveryArea', 'verifiedBy']),

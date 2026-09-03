@@ -15,7 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'session_token',
         ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackSiteVisits::class,
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
         $middleware->alias([
+            'no-cache'           => \App\Http\Middleware\PreventBackHistory::class,
             'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,

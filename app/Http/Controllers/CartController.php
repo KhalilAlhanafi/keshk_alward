@@ -58,6 +58,7 @@ class CartController extends Controller
                 'product_slug' => $item->product?->slug ?? $item->product_id,
                 'size_id' => $item->product_size_id,
                 'size_label' => $item->size ? $item->size->name : null,
+                'wrapping_color' => $item->wrapping_color,
                 'unit_price' => $unitPrice,
                 'formatted_unit_price' => format_money($unitPrice),
                 'quantity' => $item->quantity,
@@ -88,12 +89,14 @@ class CartController extends Controller
         $request->validate([
             'product_id' => ['required', 'exists:products,id'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'wrapping_color' => ['nullable', 'string', 'max:50'],
             'message' => ['nullable', 'string', 'max:500'],
         ]);
 
         $cart = $this->getOrCreateCart($request);
         $productId = $request->input('product_id');
         $sizeId = $request->input('size_id') ?: $request->input('product_size_id');
+        $wrappingColor = $request->input('wrapping_color') ?: null;
         $qty = $request->input('quantity', 1);
 
         $product = Product::with('sizes')->findOrFail($productId);
@@ -102,12 +105,20 @@ class CartController extends Controller
             $sizeId = $product->sizes->first()->id;
         }
 
-        // Find or create item
+        // Find or create item matching product, size, and wrapping color
         $itemQuery = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $productId);
             
         if ($sizeId) {
             $itemQuery->where('product_size_id', $sizeId);
+        } else {
+            $itemQuery->whereNull('product_size_id');
+        }
+
+        if ($wrappingColor) {
+            $itemQuery->where('wrapping_color', $wrappingColor);
+        } else {
+            $itemQuery->whereNull('wrapping_color');
         }
 
         $item = $itemQuery->first();
@@ -123,6 +134,7 @@ class CartController extends Controller
                 'cart_id' => $cart->id,
                 'product_id' => $productId,
                 'product_size_id' => $sizeId,
+                'wrapping_color' => $wrappingColor,
                 'quantity' => $qty,
                 'message' => $request->input('personal_message') ?: $request->input('message'),
             ]);

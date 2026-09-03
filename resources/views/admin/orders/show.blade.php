@@ -21,11 +21,13 @@
                     const data = await response.json();
                     if (response.ok) {
                         window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تم تحديث حالة الطلب بنجاح', type: 'success' } }));
+                        setTimeout(() => window.location.reload(), 800);
                     } else {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تعذر التحديث', type: 'error' } }));
+                        const errMsg = data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : 'تعذر التحديث');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: errMsg, type: 'error' } }));
                     }
                 } catch (e) {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'حدث خطأ في الاتصال', type: 'error' } }));
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'حدث خطأ في الاتصال بالسيرفر', type: 'error' } }));
                 } finally {
                     this.updatingStatus = false;
                 }
@@ -47,18 +49,19 @@
                         },
                         body: JSON.stringify({
                             action: action,
-                            rejection_reason: this.rejectionReason
+                            rejection_reason: action === 'reject' ? (this.rejectionReason || null) : null
                         })
                     });
                     const data = await response.json();
                     if (response.ok) {
                         window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تمت العملية بنجاح', type: 'success' } }));
-                        setTimeout(() => window.location.reload(), 1000);
+                        setTimeout(() => window.location.reload(), 800);
                     } else {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تعذر معالجة الطلب', type: 'error' } }));
+                        const errMsg = data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : 'تعذر معالجة الطلب');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: errMsg, type: 'error' } }));
                     }
                 } catch (e) {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'حدث خطأ في الاتصال', type: 'error' } }));
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'حدث خطأ في الاتصال بالسيرفر', type: 'error' } }));
                 } finally {
                     this.verifyingPayment = false;
                 }
@@ -95,7 +98,7 @@
                         <option value="pending">قيد الانتظار (Pending)</option>
                         <option value="confirmed">تم التأكيد (Confirmed)</option>
                         <option value="processing">قيد التجهيز (Processing)</option>
-                        <option value="out_for_delivery">خارج للتوصيل (Out For Delivery)</option>
+                        <option value="out_for_delivery">خارج للتوصيل (Out for Delivery)</option>
                         <option value="delivered">تم التوصيل (Delivered)</option>
                         <option value="cancelled">ملغي (Cancelled)</option>
                     </select>
@@ -112,32 +115,74 @@
                 </div>
             </div>
 
-            <div class="text-end">
-                <span class="text-xs text-neutral-400 block mb-1">طريقة وحالة الدفع:</span>
-                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-secondary/30 text-primary-950">
-                    {{ $order->payment_method->labelAr() }} — {{ $order->payment_status->value }}
-                </span>
+            <div class="text-end space-y-1">
+                <span class="text-xs text-neutral-400 block">طريقة وحالة الدفع:</span>
+                <div class="flex items-center gap-2 justify-end">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-secondary/30 text-primary-950">
+                        {{ $order->payment_method?->labelAr() ?? 'عند الاستلام' }}
+                    </span>
+                    @php
+                        $st = $order->status instanceof \BackedEnum ? $order->status->value : (string) $order->status;
+                        $badgeClass = match($st) {
+                            'cancelled' => 'bg-red-100 text-red-700 border border-red-200',
+                            'delivered' => 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                            'confirmed' => 'bg-sky-100 text-sky-800 border border-sky-200',
+                            default     => 'bg-amber-100 text-amber-800 border border-amber-200',
+                        };
+                    @endphp
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold {{ $badgeClass }}">
+                        {{ $order->status instanceof \App\Enums\OrderStatus ? $order->status->labelAr() : (\App\Enums\OrderStatus::tryFrom((string)$order->status)?->labelAr() ?? $order->status) }}
+                    </span>
+                </div>
             </div>
         </div>
 
         <!-- Sham Cash Proof Verification Section (If Applicable) -->
-        @if($order->payment_method->value === 'sham_cash')
+        @if(($order->payment_method instanceof \BackedEnum ? $order->payment_method->value : (string)$order->payment_method) === 'sham_cash')
+            @php
+                $proof = $order->payment_proof;
+                $isImage = false;
+                $proofUrl = null;
+
+                if ($proof) {
+                    $isImage = preg_match('/\.(jpg|jpeg|png|webp|gif|svg)$/i', $proof)
+                        || \Illuminate\Support\Str::startsWith($proof, ['payment-proofs/', 'storage/payment-proofs/', 'http://', 'https://']);
+
+                    if ($isImage) {
+                        if (\Illuminate\Support\Str::startsWith($proof, ['http://', 'https://'])) {
+                            $proofUrl = $proof;
+                        } elseif (\Illuminate\Support\Str::startsWith($proof, ['storage/', '/storage/'])) {
+                            $proofUrl = asset(ltrim($proof, '/'));
+                        } else {
+                            $proofUrl = asset('storage/' . ltrim(str_replace('public/', '', $proof), '/'));
+                        }
+                    }
+                }
+            @endphp
             <div class="bg-tertiary-50 rounded-card p-6 border border-tertiary-200/60 shadow-soft space-y-4">
                 <h3 class="font-headline-ar text-xl text-primary font-bold border-b border-tertiary-200 pb-2">
                     التحقق من دفع شام كاش (Sham Cash Verification)
                 </h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <div>
                         <p class="text-xs text-neutral-600 mb-2 font-bold">إثبات الدفع المرفوع من الزبون:</p>
-                        @if($order->payment_proof)
-                            @if(Str::startsWith($order->payment_proof, 'payment-proofs/'))
-                                <a href="{{ asset('storage/' . $order->payment_proof) }}" target="_blank" class="block w-48 h-48 rounded-2xl overflow-hidden border border-neutral-200 bg-surface shadow-xs">
-                                    <img src="{{ asset('storage/' . $order->payment_proof) }}" alt="إيصال شام كاش" class="w-full h-full object-cover">
-                                </a>
+                        @if($proof)
+                            @if($isImage && $proofUrl)
+                                <div class="space-y-2">
+                                    <a href="{{ $proofUrl }}" target="_blank" title="انقر لعرض الصورة بالحجم الكامل" class="group relative block w-56 h-56 rounded-2xl overflow-hidden border-2 border-primary/20 bg-surface shadow-md hover:border-primary transition-all">
+                                        <img src="{{ $proofUrl }}" alt="إيصال شام كاش" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                        <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1">
+                                            <span>🔍 تكبير الصورة</span>
+                                        </div>
+                                    </a>
+                                    <a href="{{ $proofUrl }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-primary font-bold hover:underline">
+                                        <span>عرض الصورة بالحجم الكامل ↗</span>
+                                    </a>
+                                </div>
                             @else
                                 <div class="p-4 bg-surface border border-neutral-200 rounded-2xl text-sm font-bold font-body text-primary select-all">
-                                    رقم العملية / المرجع: {{ $order->payment_proof }}
+                                    رقم العملية / المرجع: {{ $proof }}
                                 </div>
                             @endif
                         @else
@@ -152,9 +197,10 @@
                                 @click="processPayment('verify')" 
                                 :disabled="verifyingPayment"
                                 type="button" 
-                                class="bg-success hover:bg-green-700 text-white font-bold px-4 py-2 rounded-2xl text-xs shadow-xs"
+                                class="bg-success hover:bg-green-700 text-white font-bold px-4 py-2 rounded-2xl text-xs shadow-xs transition-colors disabled:opacity-50"
                             >
-                                ✓ قبول وتأكيد الدفع
+                                <span x-show="!verifyingPayment">✓ قبول وتأكيد الدفع</span>
+                                <span x-show="verifyingPayment">جاري التأكيد...</span>
                             </button>
                         </div>
                         <div class="pt-2 border-t border-neutral-100 space-y-2">
@@ -163,9 +209,10 @@
                                 @click="processPayment('reject')" 
                                 :disabled="verifyingPayment"
                                 type="button" 
-                                class="bg-error hover:bg-red-700 text-white font-bold px-4 py-2 rounded-2xl text-xs shadow-xs"
+                                class="bg-error hover:bg-red-700 text-white font-bold px-4 py-2 rounded-2xl text-xs shadow-xs transition-colors disabled:opacity-50"
                             >
-                                ✕ رفض الدفع وإلغاء الطلب
+                                <span x-show="!verifyingPayment">✕ رفض الدفع وإلغاء الطلب</span>
+                                <span x-show="verifyingPayment">جاري المعالجة...</span>
                             </button>
                         </div>
                     </div>
@@ -185,7 +232,12 @@
                         <div class="flex items-center gap-3">
                             <div class="space-y-1">
                                 <h4 class="font-bold text-primary text-sm">{{ $item->product_name_snapshot }}</h4>
-                                <p class="text-neutral-500">الحجم: {{ $item->size_label_snapshot }} | الكمية: {{ $item->quantity }}</p>
+                                <p class="text-neutral-500">
+                                    الحجم: {{ $item->size_label_snapshot }} | الكمية: {{ $item->quantity }}
+                                    @if($item->wrapping_color)
+                                        | <span class="font-bold text-primary">لون التغليف: {{ $item->wrapping_color }}</span>
+                                    @endif
+                                </p>
                                 @if($item->message)
                                     <p class="text-neutral-400 italic">الرسالة: "{{ $item->message }}"</p>
                                 @endif

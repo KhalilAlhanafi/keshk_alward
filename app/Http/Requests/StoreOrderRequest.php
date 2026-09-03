@@ -28,10 +28,19 @@ class StoreOrderRequest extends FormRequest
             'delivery_address' => ['required', 'string', 'max:1000'],
             'delivery_date' => ['required', 'date', 'after_or_equal:today'],
             'delivery_time_slot' => ['required', 'string', Rule::in([
-                '09:00 - 12:00',
-                '12:00 - 15:00',
-                '15:00 - 18:00',
-                '18:00 - 21:00',
+                '10:00',
+                '11:00',
+                '12:00',
+                '13:00',
+                '14:00',
+                '15:00',
+                '16:00',
+                '17:00',
+                '18:00',
+                '19:00',
+                '20:00',
+                '21:00',
+                '22:00',
             ])],
             'card_message' => ['nullable', 'string', 'max:500'],
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
@@ -50,9 +59,18 @@ class StoreOrderRequest extends FormRequest
                 $today = now()->setTimezone('Asia/Damascus')->format('Y-m-d');
                 if ($deliveryDate === $today) {
                     $currentHour = now()->setTimezone('Asia/Damascus')->hour;
-                    // Cutoff time of 18:00 (6 PM) for same-day delivery
-                    if ($currentHour >= 18) {
-                        $validator->errors()->add('delivery_date', 'عذراً، انتهى وقت قبول طلبات التوصيل لنفس اليوم (بعد الساعة 6 مساءً). يرجى اختيار تاريخ مستقبلي.');
+                    // Cutoff time of 21:00 (9 PM) for same-day delivery
+                    if ($currentHour >= 21) {
+                        $validator->errors()->add('delivery_date', 'عذراً، انتهى وقت قبول طلبات التوصيل لنفس اليوم (بعد الساعة 9 مساءً). يرجى اختيار تاريخ مستقبلي.');
+                    } else {
+                        // Check if the selected time slot has already passed
+                        $selectedTimeSlot = $this->input('delivery_time_slot');
+                        if ($selectedTimeSlot) {
+                            $selectedHour = (int) explode(':', $selectedTimeSlot)[0];
+                            if ($selectedHour <= $currentHour) {
+                                $validator->errors()->add('delivery_time_slot', 'الوقت المختار قد مضى، يرجى اختيار وقت لاحق.');
+                            }
+                        }
                     }
                 }
             }

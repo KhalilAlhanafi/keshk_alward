@@ -42,6 +42,13 @@ class DashboardController extends Controller
             $prevWeekCustomers = User::where('role', 'customer')->whereBetween('created_at', [$fourteenDaysAgo, $sevenDaysAgo])->count();
             $customersChange = $this->calculatePercentageChange($currentWeekCustomers, $prevWeekCustomers);
 
+            // 4. Visitors Stats (All-time + Today + Week-over-Week Change)
+            $totalVisitors = \App\Models\SiteVisit::count();
+            $todayVisitors = \App\Models\SiteVisit::where('visited_date', $now->toDateString())->count();
+            $currentWeekVisitors = \App\Models\SiteVisit::where('created_at', '>=', $sevenDaysAgo)->count();
+            $prevWeekVisitors = \App\Models\SiteVisit::whereBetween('created_at', [$fourteenDaysAgo, $sevenDaysAgo])->count();
+            $visitorsChange = $this->calculatePercentageChange($currentWeekVisitors, $prevWeekVisitors);
+
             // 4. Recent Products (with stock info & low-stock indicator)
             $recentProducts = Product::with(['category', 'sizes'])
                 ->orderBy('created_at', 'desc')
@@ -108,6 +115,11 @@ class DashboardController extends Controller
                     'customers' => [
                         'total' => $totalCustomers,
                         'change_percent' => $customersChange,
+                    ],
+                    'visitors' => [
+                        'total' => $totalVisitors,
+                        'today' => $todayVisitors,
+                        'change_percent' => $visitorsChange,
                     ],
                 ],
                 'recentProducts' => $recentProducts,

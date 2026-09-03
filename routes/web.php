@@ -3,9 +3,12 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OrderController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 
@@ -32,16 +35,21 @@ Route::get('/', HomepageController::class)->name('home');
 // Catalog & Products
 Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
 Route::get('/products/{slug}', [CatalogController::class, 'show'])->name('products.show');
+Route::get('/catalog/{slug}', [CatalogController::class, 'show'])->name('catalog.show');
 Route::get('/products/{id}/price-preview', [CatalogController::class, 'pricePreview'])->name('products.price-preview');
+
+// Contact Us
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
 
 // ───────────────────────────────────────────────────────────
 //  Cart — available for guests and authenticated users
 // ───────────────────────────────────────────────────────────
 
 Route::prefix('cart')->name('cart.')->middleware('throttle:public')->group(function () {
-    Route::get('/', [CartController::class, 'index'])->name('index');
+    Route::get('/', [CartController::class, 'index'])->name('index')->middleware('no-cache');
     Route::post('/', [CartController::class, 'store'])->name('store');
-    Route::put('/{id}', [CartController::class, 'update'])->name('update');
+    Route::match(['put', 'patch'], '/{id}', [CartController::class, 'update'])->name('update');
     Route::delete('/{id}', [CartController::class, 'destroy'])->name('destroy');
 });
 
@@ -54,7 +62,7 @@ Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wi
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
-        if (auth()->user()?->role === 'admin') {
+        if (Auth::user()?->role === 'admin') {
             return redirect('/admin');
         }
         return redirect()->route('profile.edit');
@@ -65,9 +73,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Checkout & Orders
-    Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'show'])->name('orders.create');
-    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'show'])->name('orders.create')->middleware('no-cache');
+    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store')->middleware('throttle:6,1');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('/orders/{order}/payment-proof', [OrderController::class, 'uploadPaymentProof'])->name('orders.payment-proof');
 
     // In-App Notifications
@@ -83,8 +92,10 @@ Route::get('/delivery-areas', \App\Http\Controllers\DeliveryAreaController::clas
 
 // ───────────────────────────────────────────────────────────
 // Dedicated High-Security Admin Authentication Routes
-Route::get('/admin/login', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'showLoginForm'])->name('admin.login');
-Route::post('/admin/login', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'login'])->name('admin.login.store');
+Route::middleware('no-cache')->group(function () {
+    Route::get('/admin/login', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+    Route::post('/admin/login', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'login'])->name('admin.login.store')->middleware('throttle:5,1');
+});
 Route::post('/admin/logout', [\App\Http\Controllers\Admin\Auth\AdminLoginController::class, 'logout'])->name('admin.logout');
 
 Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {

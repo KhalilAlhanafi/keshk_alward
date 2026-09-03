@@ -29,7 +29,24 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         if (Auth::user()) {
-            app(\App\Services\CartMergeService::class)->merge(Auth::user(), $request->cookie('session_token'));
+            $sessionToken = $request->cookie('session_token');
+            app(\App\Services\CartMergeService::class)->merge(Auth::user(), $sessionToken);
+
+            if ($sessionToken) {
+                $guestWishlists = \App\Models\Wishlist::where('session_token', $sessionToken)->get();
+                foreach ($guestWishlists as $gw) {
+                    $alreadyExists = \App\Models\Wishlist::where('user_id', Auth::id())
+                        ->where('product_id', $gw->product_id)
+                        ->exists();
+                    if (!$alreadyExists) {
+                        $gw->user_id = Auth::id();
+                        $gw->session_token = null;
+                        $gw->save();
+                    } else {
+                        $gw->delete();
+                    }
+                }
+            }
         }
 
         if (Auth::user()?->role === 'admin') {

@@ -118,7 +118,16 @@
                                     <span class="font-bold text-primary font-body text-base bg-tertiary-100 px-3 py-1 rounded-xl">
                                         {{ $order->order_number }}
                                     </span>
-                                    <span class="text-xs font-bold px-3 py-1 rounded-full bg-warning/10 text-warning">
+                                    @php
+                                        $st = $order->status instanceof \BackedEnum ? $order->status->value : (string) $order->status;
+                                        $badgeClass = match($st) {
+                                            'cancelled' => 'bg-red-100 text-red-700 border border-red-200',
+                                            'delivered' => 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                                            'confirmed' => 'bg-sky-100 text-sky-800 border border-sky-200',
+                                            default     => 'bg-amber-100 text-amber-800 border border-amber-200',
+                                        };
+                                    @endphp
+                                    <span class="text-xs font-bold px-3 py-1 rounded-full {{ $badgeClass }}">
                                         {{ $order->status?->labelAr() ?? $order->order_status?->labelAr() ?? 'قيد المعالجة' }}
                                     </span>
                                 </div>

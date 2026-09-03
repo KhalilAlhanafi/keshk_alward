@@ -27,39 +27,36 @@ class CustomerController extends Controller
 
         $customers = $query->withCount('orders')
             ->latest()
-            ->paginate(15)->withQueryString();
+            ->paginate(15)
+            ->withQueryString();
 
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json($customers);
+            $items = collect($customers->items())->map(function ($user) {
+                $totalSpend = $user->orders()->whereIn('status', ['delivered', 'confirmed'])->sum('total');
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'email' => $user->email,
+                    'orders_count' => $user->orders_count,
+                    'total_spend' => $totalSpend,
+                    'formatted_total_spend' => format_money($totalSpend),
+                    'created_at' => $user->created_at->format('Y-m-d H:i'),
+                ];
+            });
+
+            return response()->json([
+                'data' => $items,
+                'pagination' => [
+                    'current_page' => $customers->currentPage(),
+                    'last_page' => $customers->lastPage(),
+                    'per_page' => $customers->perPage(),
+                    'total' => $customers->total(),
+                ]
+            ]);
         }
 
         return view('admin.customers.index', compact('customers'));
-    }
-
-        // Map to include total spend
-        $items = collect($customers->items())->map(function ($user) {
-            $totalSpend = $user->orders()->whereIn('status', ['delivered', 'processing', 'out_for_delivery'])->sum('total');
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'orders_count' => $user->orders_count,
-                'total_spend' => $totalSpend,
-                'formatted_total_spend' => format_money($totalSpend),
-                'created_at' => $user->created_at->format('Y-m-d H:i'),
-            ];
-        });
-
-        return response()->json([
-            'data' => $items,
-            'pagination' => [
-                'current_page' => $customers->currentPage(),
-                'last_page' => $customers->lastPage(),
-                'per_page' => $customers->perPage(),
-                'total' => $customers->total(),
-            ]
-        ]);
     }
 
     /**
@@ -67,7 +64,7 @@ class CustomerController extends Controller
      */
     public function show(User $customer): JsonResponse
     {
-        abort_if(!$customer->hasRole('customer'), 404);
+        abort_if($customer->role !== 'customer' && !$customer->hasRole('customer'), 404);
 
         $orders = $customer->orders()
             ->with(['deliveryArea'])
@@ -79,12 +76,12 @@ class CustomerController extends Controller
                     'order_number' => $order->order_number,
                     'total' => $order->total,
                     'formatted_total' => format_money($order->total),
-                    'status' => $order->status,
+                    'status' => $order->status instanceof \BackedEnum ? $order->status->value : (string)$order->status,
                     'created_at' => $order->created_at->format('Y-m-d H:i'),
                 ];
             });
 
-        $totalSpend = $customer->orders()->whereIn('status', ['delivered', 'processing', 'out_for_delivery'])->sum('total');
+        $totalSpend = $customer->orders()->whereIn('status', ['delivered', 'confirmed'])->sum('total');
 
         return response()->json([
             'customer' => [

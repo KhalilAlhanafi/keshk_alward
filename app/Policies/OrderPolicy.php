@@ -13,7 +13,8 @@ class OrderPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'store_manager']);
+        return in_array($user->role, ['admin', 'store_manager']) || 
+               ($user->hasRole('admin') || $user->hasRole('store_manager'));
     }
 
     /**
@@ -22,7 +23,8 @@ class OrderPolicy
     public function view(User $user, Order $order): bool
     {
         // Admins and store managers can view any order
-        if ($user->hasRole(['admin', 'store_manager'])) {
+        if (in_array($user->role, ['admin', 'store_manager']) || 
+            ($user->hasRole('admin') || $user->hasRole('store_manager'))) {
             return true;
         }
 
@@ -44,7 +46,8 @@ class OrderPolicy
      */
     public function update(User $user, Order $order): bool
     {
-        return $user->hasRole(['admin', 'store_manager']);
+        return in_array($user->role, ['admin', 'store_manager']) || 
+               ($user->hasRole('admin') || $user->hasRole('store_manager'));
     }
 
     /**
@@ -53,7 +56,7 @@ class OrderPolicy
     public function delete(User $user, Order $order): bool
     {
         // Only admins can delete orders
-        return $user->hasRole('admin');
+        return $user->role === 'admin' || $user->hasRole('admin');
     }
 
     /**
@@ -61,8 +64,9 @@ class OrderPolicy
      */
     public function verifyPayment(User $user, Order $order): bool
     {
-        // Only admins can verify payments
-        return $user->hasRole('admin');
+        // Admins and store managers can verify payments
+        return in_array($user->role, ['admin', 'store_manager']) || 
+               ($user->hasRole('admin') || $user->hasRole('store_manager'));
     }
 
     /**
@@ -70,7 +74,7 @@ class OrderPolicy
      */
     public function restore(User $user, Order $order): bool
     {
-        return $user->hasRole('admin');
+        return $user->role === 'admin' || $user->hasRole('admin');
     }
 
     /**
@@ -78,6 +82,6 @@ class OrderPolicy
      */
     public function forceDelete(User $user, Order $order): bool
     {
-        return $user->hasRole('admin');
+        return $user->role === 'admin' || $user->hasRole('admin');
     }
 }

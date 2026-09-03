@@ -11,6 +11,7 @@ use App\Policies\SettingPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,11 +29,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         // Register policies
         $this->registerPolicies();
 
         // Configure rate limiters
         $this->configureRateLimiting();
+
+        // Configure guest middleware redirect destination
+        \Illuminate\Auth\Middleware\RedirectIfAuthenticated::redirectUsing(function ($request) {
+            if (auth()->user()?->role === 'admin' || (auth()->user() && auth()->user()->hasRole('admin'))) {
+                return route('admin.dashboard');
+            }
+            return route('home');
+        });
 
         // Event listeners are automatically discovered by Laravel 11.
         // No manual registration needed here.

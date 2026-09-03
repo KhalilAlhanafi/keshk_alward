@@ -15,6 +15,7 @@ class Product extends Model
         'name_ar',
         'slug',
         'description',
+        'arrangement_details',
         'sku',
         'base_price',
         'image_path',
@@ -33,6 +34,7 @@ class Product extends Model
         'name',
         'price',
         'primary_image_url',
+        'gallery_urls',
         'formatted_price',
     ];
 
@@ -75,14 +77,75 @@ class Product extends Model
     }
 
     /**
+     * Accessor for all gallery image URLs of this product.
+     */
+    public function getGalleryUrlsAttribute(): array
+    {
+        if (empty($this->image_path)) {
+            return ['https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=600&q=80'];
+        }
+
+        $raw = $this->image_path;
+
+        if (str_starts_with($raw, '[') || str_starts_with($raw, '{')) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                // If it is a list of images [ ... ]
+                if (array_is_list($decoded)) {
+                    $urls = [];
+                    foreach ($decoded as $item) {
+                        if (is_string($item)) {
+                            $urls[] = str_starts_with($item, 'http') ? $item : asset('storage/' . $item);
+                        } elseif (is_array($item)) {
+                            $p = $item['medium'] ?? $item['original'] ?? $item['thumbnail'] ?? $item['large'] ?? null;
+                            if ($p) {
+                                $urls[] = str_starts_with($p, 'http') ? $p : asset('storage/' . $p);
+                            }
+                        }
+                    }
+                    if (!empty($urls)) {
+                        return $urls;
+                    }
+                } else {
+                    // Single image variant map: {"original": "...", "medium": "..."}
+                    $p = $decoded['medium'] ?? $decoded['original'] ?? $decoded['thumbnail'] ?? $decoded['large'] ?? null;
+                    if ($p) {
+                        return [str_starts_with($p, 'http') ? $p : asset('storage/' . $p)];
+                    }
+                }
+            }
+        }
+
+        return [str_starts_with($raw, 'http') ? $raw : asset('storage/' . $raw)];
+    }
+
+    /**
      * Accessor for primary image URL.
      */
     public function getPrimaryImageUrlAttribute(): string
     {
-        if (!empty($this->image_path)) {
-            return str_starts_with($this->image_path, 'http') ? $this->image_path : asset('storage/' . $this->image_path);
+        $gallery = $this->gallery_urls;
+        return $gallery[0] ?? 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=600&q=80';
+    }
+
+    /**
+     * Accessor for arrangement details lines / points.
+     */
+    public function getArrangementPointsAttribute(): array
+    {
+        if (!empty($this->arrangement_details)) {
+            $lines = preg_split('/\r\n|\r|\n/', $this->arrangement_details);
+            $cleanLines = array_values(array_filter(array_map('trim', $lines)));
+            if (!empty($cleanLines)) {
+                return $cleanLines;
+            }
         }
-        return 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=600&q=80';
+
+        return [
+            'مجموعة ورود وأغصان طبيعية طازجة منتقاة يدوياً بعناية فائقة.',
+            'تغليف قماشي/ورقي فاخر بتوقيع كشك الورد مع شريط ستان متناسق.',
+            'كرت إهداء أنيق مجاني جاهز لكتابة رسالتك الخاصة.',
+        ];
     }
 
     /**

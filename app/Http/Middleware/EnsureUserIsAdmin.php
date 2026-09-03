@@ -26,7 +26,7 @@ class EnsureUserIsAdmin
                    ($user->hasRole('admin') || $user->hasRole('store_manager'));
 
         if (! $isAdmin) {
-            return redirect()->route('admin.login')->with('status', 'يرجى تسجيل الدخول بحساب المدير للوصول إلى لوحة الإدارة.');
+            abort(403, 'غير مصرح بالوصول إلى لوحة الإدارة.');
         }
 
         return $next($request);

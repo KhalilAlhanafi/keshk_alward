@@ -8,6 +8,7 @@ use App\Models\ProductSize;
 use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -27,20 +28,30 @@ class ProductController extends Controller
     {
         $query = Product::with(['category', 'sizes']);
 
-        // Search by name
+        // Search by name or description
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name_ar', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
             });
         }
 
+        // Filter by category
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->input('category_id'));
+        }
+
         $products = $query->latest()->paginate(15)->withQueryString();
+        $categories = \App\Models\Category::orderBy('name_ar')->get();
+        $addons = \App\Models\Addon::where('is_active', true)->get();
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'data' => $products->items(),
+                'categories' => $categories,
+                'addons' => $addons,
                 'pagination' => [
                     'current_page' => $products->currentPage(),
                     'last_page' => $products->lastPage(),
@@ -50,7 +61,7 @@ class ProductController extends Controller
             ]);
         }
 
-        return view('admin.products.index', compact('products'));
+        return view('admin.products.index', compact('products', 'categories', 'addons'));
     }
 
     /**
@@ -58,15 +69,47 @@ class ProductController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Decode JSON-stringified arrays from FormData if present
+        if (is_string($request->input('sizes'))) {
+            $decodedSizes = json_decode($request->input('sizes'), true);
+            if (is_array($decodedSizes)) {
+                $request->merge(['sizes' => $decodedSizes]);
+            }
+        }
+
+        if (is_string($request->input('addon_ids'))) {
+            $decodedAddons = json_decode($request->input('addon_ids'), true);
+            if (is_array($decodedAddons)) {
+                $request->merge(['addon_ids' => $decodedAddons]);
+            }
+        }
+
+        // If sizes not provided or empty, create default medium size
+        if (!$request->has('sizes') || empty($request->input('sizes'))) {
+            $request->merge([
+                'sizes' => [
+                    [
+                        'size_key' => 'medium',
+                        'label_ar' => 'وسط',
+                        'price' => (int) $request->input('base_price', 0),
+                        'stock' => (int) $request->input('stock', 10),
+                    ]
+                ]
+            ]);
+        }
+
         $request->validate([
             'category_id' => ['required', 'exists:categories,id'],
             'name_ar' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'sku' => ['required', 'string', 'unique:products,sku', 'max:100'],
+            'arrangement_details' => ['nullable', 'string'],
+            'sku' => ['nullable', 'string', 'max:100'],
             'base_price' => ['required', 'integer', 'min:0'],
             'is_best_seller' => ['boolean'],
             'is_active' => ['boolean'],
-            'image' => ['nullable', 'image', 'max:4096'], // max 4MB
+            'image' => ['nullable', 'image'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['nullable', 'image'],
             'sizes' => ['required', 'array', 'min:1'],
             'sizes.*.size_key' => ['required', Rule::in(['small', 'medium', 'large'])],
             'sizes.*.label_ar' => ['required', 'string', 'max:100'],
@@ -76,19 +119,28 @@ class ProductController extends Controller
             'addon_ids.*' => ['exists:addons,id'],
         ]);
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            // Process and store multiple sizes and formats
-            $paths = $this->imageService->store($request->file('image'));
-            $imagePath = json_encode($paths);
+        // Process multiple or single image uploads
+        $imageEntries = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file instanceof UploadedFile) {
+                    $imageEntries[] = $this->imageService->store($file);
+                }
+            }
+        } elseif ($request->hasFile('image')) {
+            $imageEntries[] = $this->imageService->store($request->file('image'));
         }
+
+        $imagePath = !empty($imageEntries) ? json_encode($imageEntries) : null;
+        $sku = $request->filled('sku') ? $request->input('sku') : 'KW-' . strtoupper(Str::random(6));
 
         $product = Product::create([
             'category_id' => $request->input('category_id'),
             'name_ar' => $request->input('name_ar'),
             'slug' => Str::slug($request->input('name_ar')) . '-' . uniqid(),
             'description' => $request->input('description'),
-            'sku' => $request->input('sku'),
+            'arrangement_details' => $request->input('arrangement_details'),
+            'sku' => $sku,
             'base_price' => $request->input('base_price'),
             'image_path' => $imagePath,
             'is_best_seller' => $request->boolean('is_best_seller', false),
@@ -112,8 +164,8 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'تم إنشاء المنتج بنجاح.',
-            'product' => $product->load(['sizes', 'addons']),
-        ], 210); // 210 Created custom
+            'product' => $product->load(['sizes', 'addons', 'category']),
+        ], 210); // 210 Created custom for test compatibility
     }
 
     /**
@@ -129,15 +181,61 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product): JsonResponse
     {
+        // Decode JSON-stringified arrays from FormData if present
+        if (is_string($request->input('sizes'))) {
+            $decodedSizes = json_decode($request->input('sizes'), true);
+            if (is_array($decodedSizes)) {
+                $request->merge(['sizes' => $decodedSizes]);
+            }
+        }
+
+        if (is_string($request->input('addon_ids'))) {
+            $decodedAddons = json_decode($request->input('addon_ids'), true);
+            if (is_array($decodedAddons)) {
+                $request->merge(['addon_ids' => $decodedAddons]);
+            }
+        }
+
+        // If sizes not provided on update, retain or default
+        if (!$request->has('sizes') || empty($request->input('sizes'))) {
+            if ($product->sizes()->count() > 0) {
+                $existingSizes = $product->sizes->map(function ($s) use ($request) {
+                    return [
+                        'id' => $s->id,
+                        'size_key' => $s->size_key->value ?? $s->size_key,
+                        'label_ar' => $s->label_ar,
+                        'price' => (int) ($request->filled('base_price') ? $request->input('base_price') : $s->price),
+                        'stock' => (int) $s->stock,
+                    ];
+                })->toArray();
+                $request->merge(['sizes' => $existingSizes]);
+            } else {
+                $request->merge([
+                    'sizes' => [
+                        [
+                            'size_key' => 'medium',
+                            'label_ar' => 'وسط',
+                            'price' => (int) $request->input('base_price', $product->base_price),
+                            'stock' => (int) $request->input('stock', 10),
+                        ]
+                    ]
+                ]);
+            }
+        }
+
         $request->validate([
             'category_id' => ['required', 'exists:categories,id'],
             'name_ar' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'sku' => ['required', 'string', Rule::unique('products', 'sku')->ignore($product->id), 'max:100'],
+            'arrangement_details' => ['nullable', 'string'],
+            'sku' => ['nullable', 'string', 'max:100'],
             'base_price' => ['required', 'integer', 'min:0'],
             'is_best_seller' => ['boolean'],
             'is_active' => ['boolean'],
-            'image' => ['nullable', 'image', 'max:4096'],
+            'image' => ['nullable', 'image'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['nullable', 'image'],
+            'existing_images' => ['nullable'],
             'sizes' => ['required', 'array', 'min:1'],
             'sizes.*.id' => ['nullable', 'exists:product_sizes,id'],
             'sizes.*.size_key' => ['required', Rule::in(['small', 'medium', 'large'])],
@@ -148,24 +246,57 @@ class ProductController extends Controller
             'addon_ids.*' => ['exists:addons,id'],
         ]);
 
-        $imagePath = $product->image_path;
-        if ($request->hasFile('image')) {
-            // Delete old image variants first
-            if ($product->image_path) {
-                $oldPaths = json_decode($product->image_path, true);
-                if (is_array($oldPaths) && isset($oldPaths['original'])) {
-                    $this->imageService->delete($oldPaths['original']);
+        // Manage existing images list
+        $existingKept = [];
+        if ($product->image_path) {
+            $decoded = json_decode($product->image_path, true);
+            if (is_array($decoded)) {
+                $currentEntries = array_is_list($decoded) ? $decoded : [$decoded];
+            } else {
+                $currentEntries = [$product->image_path];
+            }
+
+            if ($request->has('existing_images')) {
+                $keptList = $request->input('existing_images');
+                if (is_string($keptList)) {
+                    $keptList = json_decode($keptList, true) ?? [];
+                }
+                if (is_array($keptList)) {
+                    foreach ($currentEntries as $entry) {
+                        $url = is_array($entry) ? ($entry['medium'] ?? $entry['original'] ?? '') : (string)$entry;
+                        foreach ($keptList as $k) {
+                            if ($k && (str_contains($url, (string)$k) || str_contains((string)$k, $url) || (is_string($entry) && $entry === $k))) {
+                                $existingKept[] = $entry;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                $existingKept = $currentEntries;
+            }
+        }
+
+        // Process newly uploaded images
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file instanceof UploadedFile) {
+                    $existingKept[] = $this->imageService->store($file);
                 }
             }
-            $paths = $this->imageService->store($request->file('image'));
-            $imagePath = json_encode($paths);
+        } elseif ($request->hasFile('image')) {
+            $existingKept[] = $this->imageService->store($request->file('image'));
         }
+
+        $imagePath = !empty($existingKept) ? json_encode($existingKept) : null;
+        $sku = $request->filled('sku') ? $request->input('sku') : ($product->sku ?: 'KW-' . strtoupper(Str::random(6)));
 
         $product->update([
             'category_id' => $request->input('category_id'),
             'name_ar' => $request->input('name_ar'),
             'description' => $request->input('description'),
-            'sku' => $request->input('sku'),
+            'arrangement_details' => $request->input('arrangement_details'),
+            'sku' => $sku,
             'base_price' => $request->input('base_price'),
             'image_path' => $imagePath,
             'is_best_seller' => $request->boolean('is_best_seller', false),
@@ -200,8 +331,8 @@ class ProductController extends Controller
         }
 
         return response()->json([
-            'message' => 'تم تحديث المنتج بنجاح.',
-            'product' => $product->load(['sizes', 'addons']),
+            'message' => 'تم تحديث بيانات المنتج بنجاح.',
+            'product' => $product->load(['sizes', 'addons', 'category']),
         ]);
     }
 
@@ -212,9 +343,18 @@ class ProductController extends Controller
     {
         // Delete images
         if ($product->image_path) {
-            $oldPaths = json_decode($product->image_path, true);
-            if (is_array($oldPaths) && isset($oldPaths['original'])) {
-                $this->imageService->delete($oldPaths['original']);
+            $decoded = json_decode($product->image_path, true);
+            if (is_array($decoded)) {
+                $items = array_is_list($decoded) ? $decoded : [$decoded];
+                foreach ($items as $item) {
+                    if (is_array($item) && isset($item['original'])) {
+                        $this->imageService->delete($item['original']);
+                    } elseif (is_string($item)) {
+                        $this->imageService->delete($item);
+                    }
+                }
+            } else {
+                $this->imageService->delete($product->image_path);
             }
         }
 

@@ -56,5 +56,33 @@
             <p>© 2026 كشك الورد — جميع الحقوق محفوظة</p>
         </footer>
 
+        <!-- Prevent Back-Forward Cache (BFCache) from showing stale authentication/guest pages -->
+        <script>
+            (function () {
+                function redirectIfBackOrAuth(event) {
+                    var isBackForward = false;
+                    if (event && event.persisted) {
+                        isBackForward = true;
+                    } else if (window.performance && window.performance.getEntriesByType) {
+                        var navEntries = window.performance.getEntriesByType('navigation');
+                        if (navEntries.length > 0 && navEntries[0].type === 'back_forward') {
+                            isBackForward = true;
+                        }
+                    } else if (window.performance && window.performance.navigation && window.performance.navigation.type === 2) {
+                        isBackForward = true;
+                    }
+
+                    if (isBackForward) {
+                        window.location.replace("{{ route('home') }}");
+                    }
+                }
+
+                window.addEventListener('pageshow', redirectIfBackOrAuth);
+
+                @auth
+                    window.location.replace("{{ Auth::user()->role === 'admin' ? route('admin.dashboard') : route('home') }}");
+                @endauth
+            })();
+        </script>
     </body>
 </html>

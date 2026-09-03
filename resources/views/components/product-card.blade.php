@@ -26,7 +26,6 @@
 <div 
     x-data="{ 
         adding: false, 
-        isWishlisted: {{ $isWishlisted ? 'true' : 'false' }},
         async addToCart() {
             this.adding = true;
             try {
@@ -63,38 +62,6 @@
             } finally {
                 this.adding = false;
             }
-        },
-        async toggleWishlist() {
-            const previousState = this.isWishlisted;
-            this.isWishlisted = !this.isWishlisted; // Optimistic UI update
-            
-            try {
-                const response = await fetch('/wishlist/toggle', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ product_id: {{ $id ?? 0 }} })
-                });
-                
-                if (!response.ok) {
-                    this.isWishlisted = previousState; // Rollback
-                    window.dispatchEvent(new CustomEvent('toast', { 
-                        detail: { message: 'تعذر تحديث المفضلة', type: 'error' } 
-                    }));
-                } else {
-                    window.dispatchEvent(new CustomEvent('toast', { 
-                        detail: { message: this.isWishlisted ? 'تم إضافته للمفضلة' : 'تمت إزالته من المفضلة', type: 'success' } 
-                    }));
-                }
-            } catch (err) {
-                this.isWishlisted = previousState; // Rollback
-                window.dispatchEvent(new CustomEvent('toast', { 
-                    detail: { message: 'حدث خطأ في الاتصال', type: 'error' } 
-                }));
-            }
         }
     }"
     class="group bg-surface rounded-card shadow-soft overflow-hidden border border-neutral-100 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1"
@@ -119,12 +86,13 @@
 
         <!-- Wishlist Heart Icon Button -->
         <button 
-            @click="toggleWishlist()"
+            @click.stop.prevent="$store.wishlist.toggle({{ $id }})"
             type="button" 
-            class="absolute top-2 end-2 p-1.5 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none"
+            class="absolute top-2 end-2 p-1.5 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none cursor-pointer z-10"
+            :title="$store.wishlist.has({{ $id }}) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
             aria-label="المفضلة"
         >
-            <svg class="w-4 h-4 transition-colors" :class="isWishlisted ? 'text-secondary fill-secondary' : 'text-neutral-400 fill-none'" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-4 h-4 transition-colors" :class="$store.wishlist.has({{ $id }}) ? 'text-secondary fill-secondary' : 'text-neutral-400 fill-none'" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
         </button>

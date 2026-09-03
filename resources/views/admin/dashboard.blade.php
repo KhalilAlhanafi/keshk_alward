@@ -16,8 +16,8 @@
             </a>
         </div>
 
-        <!-- Stat Cards Row (3 Cards) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <!-- Stat Cards Row (4 Cards) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             
             <!-- Revenue Card -->
             <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-2">
@@ -61,6 +61,21 @@
                 <div class="text-xs font-medium flex items-center gap-1">
                     <span class="text-success font-bold font-body">+{{ $stats['customers']['change_percent'] ?? 0 }}%</span>
                     <span class="text-neutral-400">مقارنة بالأسبوع الماضي</span>
+                </div>
+            </div>
+
+            <!-- Site Visitors Card -->
+            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-2">
+                <div class="flex items-center justify-between text-xs text-neutral-500 font-bold">
+                    <span>زوار الموقع</span>
+                    <span class="text-lg">🌐</span>
+                </div>
+                <div class="text-2xl md:text-3xl font-bold font-body text-primary">
+                    {{ $stats['visitors']['total'] ?? 0 }}
+                </div>
+                <div class="text-xs font-medium flex items-center justify-between">
+                    <span class="text-primary font-bold font-body">اليوم: {{ $stats['visitors']['today'] ?? 0 }} زائر</span>
+                    <span class="text-success font-bold font-body">+{{ $stats['visitors']['change_percent'] ?? 0 }}%</span>
                 </div>
             </div>
 
@@ -108,7 +123,16 @@
                                     </span>
                                 </td>
                                 <td class="p-3">
-                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-warning/15 text-warning">
+                                    @php
+                                        $st = $order['status'] ?? 'pending';
+                                        $badgeClass = match($st) {
+                                            'cancelled' => 'bg-red-100 text-red-700 border border-red-200',
+                                            'delivered' => 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                                            'confirmed' => 'bg-sky-100 text-sky-800 border border-sky-200',
+                                            default     => 'bg-amber-100 text-amber-800 border border-amber-200',
+                                        };
+                                    @endphp
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold {{ $badgeClass }}">
                                         {{ $order['status_label'] ?? 'قيد المعالجة' }}
                                     </span>
                                 </td>

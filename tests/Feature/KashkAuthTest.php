@@ -29,7 +29,7 @@ test('user can register with a valid Syrian phone number and gets customer role'
         'password_confirmation' => 'password',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect(route('home'));
     $this->assertAuthenticated();
 
     $user = User::where('phone', '+963988888888')->first();
@@ -51,7 +51,7 @@ test('user cannot register with an invalid phone number format', function () {
     $this->assertGuest();
 });
 
-test('user can login using phone number', function () {
+test('user can login using phone number and redirects to home', function () {
     $user = User::create([
         'name' => 'علي',
         'phone' => '+963944444444',
@@ -66,11 +66,11 @@ test('user can login using phone number', function () {
         'password' => 'password',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect(route('home'));
     $this->assertAuthenticatedAs($user);
 });
 
-test('user can login using email as fallback', function () {
+test('user can login using email as fallback and redirects to home', function () {
     $user = User::create([
         'name' => 'علي',
         'phone' => '+963944444444',
@@ -85,8 +85,38 @@ test('user can login using email as fallback', function () {
         'password' => 'password',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect(route('home'));
     $this->assertAuthenticatedAs($user);
+});
+
+test('authenticated user is redirected away from login and register to home page', function () {
+    $user = User::create([
+        'name' => 'مستخدم مسجل',
+        'phone' => '+963955555555',
+        'password' => bcrypt('password'),
+        'role' => 'customer',
+    ]);
+    $user->assignRole('customer');
+
+    // Visiting login when authenticated redirects to home
+    $loginResponse = $this->actingAs($user)->get('/login');
+    $loginResponse->assertRedirect(route('home'));
+
+    // Visiting register when authenticated redirects to home
+    $registerResponse = $this->actingAs($user)->get('/register');
+    $registerResponse->assertRedirect(route('home'));
+});
+
+test('auth pages deliver no-cache headers to prevent browser back-button caching', function () {
+    $response = $this->get('/login');
+    $response->assertStatus(200);
+    $response->assertHeader('Cache-Control', 'max-age=0, must-revalidate, no-cache, no-store, private');
+    $response->assertHeader('Pragma', 'no-cache');
+
+    $regResponse = $this->get('/register');
+    $regResponse->assertStatus(200);
+    $regResponse->assertHeader('Cache-Control', 'max-age=0, must-revalidate, no-cache, no-store, private');
+    $regResponse->assertHeader('Pragma', 'no-cache');
 });
 
 test('admin route group is guarded against guests and customers but allows admin/store_manager', function () {
@@ -117,7 +147,7 @@ test('admin route group is guarded against guests and customers but allows admin
 
     $response = $this->actingAs($manager)->getJson('/admin/dashboard');
     $response->assertStatus(200)
-             ->assertJsonStructure(['stats', 'recent_products', 'recent_orders']);
+             ->assertJsonStructure(['stats', 'recentProducts', 'recentOrders']);
 
     // 4. Admin
     $admin = User::create([
@@ -130,7 +160,7 @@ test('admin route group is guarded against guests and customers but allows admin
 
     $response = $this->actingAs($admin)->getJson('/admin/dashboard');
     $response->assertStatus(200)
-             ->assertJsonStructure(['stats', 'recent_products', 'recent_orders']);
+             ->assertJsonStructure(['stats', 'recentProducts', 'recentOrders']);
 });
 
 test('guest cart is automatically merged into user cart on login', function () {
@@ -182,7 +212,7 @@ test('guest cart is automatically merged into user cart on login', function () {
             'password' => 'password',
         ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect(route('home'));
 
     // Assert that the items merged (quantities summed: 2 + 3 = 5)
     $userItem->refresh();

@@ -58,6 +58,31 @@ class TelegramNotifierService
         }
     }
 
+    public function sendOrderCancelledAlert(Order $order): bool
+    {
+        if (empty($this->chatId) || empty(config('services.telegram.bot_token'))) {
+            return false;
+        }
+
+        try {
+            $text = implode("\n", [
+                '🚫 <b>إلغاء طلب — كشك الورد</b>',
+                '',
+                "تم إلغاء الطلب رقم: <b>{$order->order_number}</b>",
+            ]);
+
+            $response = Http::timeout(10)->post("{$this->apiBase}/sendMessage", [
+                'chat_id'    => $this->chatId,
+                'text'       => $text,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return $response->successful();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     /**
      * Build the Telegram message text for a new order.
      * Follows Global Conventions: Western numerals + ل.س currency.

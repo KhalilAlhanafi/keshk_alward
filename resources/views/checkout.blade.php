@@ -1,24 +1,24 @@
 @php
     $jsonDeliveryAreas = json_encode($deliveryAreas ?? []);
     $jsonTotals = json_encode($totals ?? []);
-    $todayDate = now()->setTimezone('Asia/Damascus')->format('Y-m-d');
+    $damascusNow = now()->setTimezone('Asia/Damascus');
+    $isPastCutoff = $damascusNow->hour >= 21;
+    $minDeliveryDate = $isPastCutoff ? $damascusNow->copy()->addDay()->format('Y-m-d') : $damascusNow->format('Y-m-d');
+    $defaultDeliveryDate = $minDeliveryDate;
 @endphp
 
 <x-app-layout>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('checkoutPage', () => ({
-                firstName: '{{ auth()->user()?->name ?? '' }}',
-                lastName: '',
+                fullName: '{{ auth()->user()?->name ?? '' }}',
                 phoneDigits: '9',
                 phone: '+9639',
-                email: '{{ auth()->user()?->email ?? '' }}',
                 selectedCity: '{{ $cities->first() ?? 'دمشق' }}',
                 selectedAreaId: '{{ $deliveryAreas->first()?->id ?? '' }}',
-                streetAddress: '',
-                buildingInfo: '',
-                deliveryDate: '{{ $todayDate }}',
-                deliveryTimeSlot: '12:00 - 15:00',
+                deliveryAddress: '',
+                deliveryDate: '{{ $defaultDeliveryDate }}',
+                deliveryTimeSlot: '10:00',
                 cardMessage: '',
                 paymentMethod: 'sham_cash',
                 idempotencyKey: 'ik_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9),
@@ -26,6 +26,11 @@
 
                 deliveryAreas: {!! $jsonDeliveryAreas !!},
                 totals: {!! $jsonTotals !!},
+
+                init() {
+                    this.$watch('selectedAreaId', () => this.updateDeliveryFee());
+                    this.updateDeliveryFee();
+                },
 
                 get filteredAreas() {
                     return this.deliveryAreas.filter(a => a.city_ar === this.selectedCity);
@@ -43,10 +48,10 @@
                 },
 
                 async submitOrder() {
-                    const recipientName = (this.firstName + ' ' + this.lastName).trim() || this.firstName;
+                    const recipientName = this.fullName.trim();
                     
                     if (!recipientName) {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'يرجى إدخال اسم المستلم', type: 'error' } }));
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'يرجى إدخال الاسم الكامل للمستلم', type: 'error' } }));
                         return;
                     }
 
@@ -60,8 +65,8 @@
                         return;
                     }
 
-                    if (!this.streetAddress) {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'يرجى كتابة العنوان التفصيلي', type: 'error' } }));
+                    if (!this.deliveryAddress.trim()) {
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'يرجى كتابة العنوان بالتفصيل', type: 'error' } }));
                         return;
                     }
 
@@ -79,7 +84,7 @@
                                 recipient_name: recipientName,
                                 recipient_phone: this.phone,
                                 delivery_area_id: this.selectedAreaId,
-                                delivery_address: this.streetAddress + (this.buildingInfo ? ' - ' + this.buildingInfo : ''),
+                                delivery_address: this.deliveryAddress.trim(),
                                 delivery_date: this.deliveryDate,
                                 delivery_time_slot: this.deliveryTimeSlot,
                                 card_message: this.cardMessage,
@@ -138,26 +143,14 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">الاسم الأول *</label>
+                            <label class="block text-xs font-bold text-neutral-700 mb-1">الاسم الكامل *</label>
                             <input 
                                 type="text" 
-                                x-model="firstName" 
-                                placeholder="أدخل اسمك" 
+                                x-model="fullName" 
+                                placeholder="أدخل اسم المستلم بالكامل" 
                                 class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm"
                             >
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">اسم العائلة *</label>
-                            <input 
-                                type="text" 
-                                x-model="lastName" 
-                                placeholder="أدخل اسم العائلة" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-neutral-700 mb-1">رقم الجوال السوري *</label>
                             <div class="flex items-center rounded-2xl border border-neutral-200 bg-tertiary-50 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden transition-colors" dir="ltr">
@@ -184,16 +177,6 @@
                             </div>
                             <span class="text-[10px] text-neutral-400 mt-1 block">كتابة 9 أرقام تبدأ بـ 9</span>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">البريد الإلكتروني (اختياري)</label>
-                            <input 
-                                type="email" 
-                                x-model="email" 
-                                placeholder="example@email.com" 
-                                dir="ltr"
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm text-end font-body"
-                            >
-                        </div>
                     </div>
                 </div>
 
@@ -210,49 +193,50 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-neutral-700 mb-1">المدينة *</label>
-                            <select 
-                                x-model="selectedCity" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm cursor-pointer"
-                            >
-                                @foreach($cities as $c)
-                                    <option value="{{ $c }}">{{ $c }}</option>
-                                @endforeach
-                            </select>
+                            <div class="relative">
+                                <select 
+                                    x-model="selectedCity"
+                                    @change="selectedAreaId = filteredAreas.length ? filteredAreas[0].id : ''; updateDeliveryFee()"
+                                    style="background-image: none !important;"
+                                    class="w-full [background-image:none] appearance-none bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl ps-4 pe-10 py-2.5 text-xs md:text-sm font-body cursor-pointer"
+                                >
+                                    @foreach($cities as $city)
+                                        <option value="{{ $city }}">{{ $city }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3.5 text-neutral-500">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </div>
+                            </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">المنطقة / الحي *</label>
-                            <select 
-                                x-model="selectedAreaId" 
-                                @change="updateDeliveryFee()"
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm cursor-pointer"
-                            >
-                                <template x-for="area in filteredAreas" :key="area.id">
-                                    <option :value="area.id" x-text="area.area_ar + ' (' + formatMoney(area.delivery_fee) + ')'"></option>
-                                </template>
-                            </select>
+                            <label class="block text-xs font-bold text-neutral-700 mb-1">المنطقة *</label>
+                            <div class="relative">
+                                <select 
+                                    x-model="selectedAreaId" 
+                                    style="background-image: none !important;"
+                                    class="w-full [background-image:none] appearance-none bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl ps-4 pe-10 py-2.5 text-xs md:text-sm font-body cursor-pointer"
+                                >
+                                    <template x-for="area in filteredAreas" :key="area.id">
+                                        <option :value="area.id" x-text="area.area_ar + ' (' + formatMoney(area.delivery_fee) + ')'"></option>
+                                    </template>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3.5 text-neutral-500">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">الحي / الشارع الرئيسي *</label>
-                            <input 
-                                type="text" 
-                                x-model="streetAddress" 
-                                placeholder="اسم الحي أو الشارع الرئيسي" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm"
-                            >
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">رقم المبنى / الشقة (اختياري)</label>
-                            <input 
-                                type="text" 
-                                x-model="buildingInfo" 
-                                placeholder="رقم البناء والطابق" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm"
-                            >
-                        </div>
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">العنوان بالتفصيل *</label>
+                        <textarea 
+                            x-model="deliveryAddress" 
+                            rows="3" 
+                            placeholder="اكتب العنوان بالتفصيل (المدينة، المنطقة، اسم الشارع، رقم البناء، الطابق، أية علامة مميزة)..." 
+                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl p-4 text-xs md:text-sm font-body-ar transition-colors resize-none"
+                        ></textarea>
                     </div>
                 </div>
 
@@ -271,21 +255,47 @@
                             <input 
                                 type="date" 
                                 x-model="deliveryDate" 
-                                min="{{ $todayDate }}"
+                                min="{{ $minDeliveryDate }}"
                                 class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body cursor-pointer"
                             >
+                            @if($isPastCutoff)
+                                <p class="text-[11px] text-amber-700 mt-1 font-medium">
+                                    تنويه: انتهت مهلة طلبات اليوم (بعد الساعة 9:00 مساءً). أقرب موعد توصيل هو الغد.
+                                </p>
+                            @else
+                                <p class="text-[11px] text-neutral-400 mt-1">
+                                    قبول طلبات التوصيل لنفس اليوم متاح حتى الساعة 9:00 مساءً.
+                                </p>
+                            @endif
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-neutral-700 mb-1">فترة التوصيل *</label>
-                            <select 
-                                x-model="deliveryTimeSlot" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body cursor-pointer"
-                            >
-                                <option value="09:00 - 12:00">الفترة الصباحية (09:00 - 12:00)</option>
-                                <option value="12:00 - 15:00">فترة الظهيرة (12:00 - 15:00)</option>
-                                <option value="15:00 - 18:00">فترة العصر (15:00 - 18:00)</option>
-                                <option value="18:00 - 21:00">الفترة المسائية (18:00 - 21:00)</option>
-                            </select>
+                            <div class="relative">
+                                <select 
+                                    x-model="deliveryTimeSlot" 
+                                    style="background-image: none !important;"
+                                    class="w-full [background-image:none] appearance-none bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl ps-4 pe-10 py-2.5 text-xs md:text-sm font-body cursor-pointer"
+                                >
+                                    <option value="10:00">10:00 صباحاً</option>
+                                    <option value="11:00">11:00 صباحاً</option>
+                                    <option value="12:00">12:00 مساءً</option>
+                                    <option value="13:00">01:00 مساءً</option>
+                                    <option value="14:00">02:00 مساءً</option>
+                                    <option value="15:00">03:00 مساءً</option>
+                                    <option value="16:00">04:00 مساءً</option>
+                                    <option value="17:00">05:00 مساءً</option>
+                                    <option value="18:00">06:00 مساءً</option>
+                                    <option value="19:00">07:00 مساءً</option>
+                                    <option value="20:00">08:00 مساءً</option>
+                                    <option value="21:00">09:00 مساءً</option>
+                                    <option value="22:00">10:00 مساءً</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3.5 text-neutral-500">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -396,9 +406,16 @@
                             <span class="font-bold text-neutral-800 font-body" x-text="totals.formatted_subtotal"></span>
                         </div>
 
+                        <template x-if="totals.addons_total > 0">
+                            <div class="flex justify-between items-center">
+                                <span>الإضافات المختارة</span>
+                                <span class="font-bold text-neutral-800 font-body" x-text="totals.formatted_addons_total"></span>
+                            </div>
+                        </template>
+
                         <div class="flex justify-between items-center">
-                            <span>رسوم التوصيل المقدرة</span>
-                            <span class="font-bold text-neutral-800 font-body" x-text="totals.formatted_delivery_fee"></span>
+                            <span>أجور التوصيل</span>
+                            <span class="font-bold text-neutral-800 font-body" x-text="totals.formatted_delivery_fee || 'مجاناً'"></span>
                         </div>
 
                         <div class="border-t border-neutral-100 pt-3 flex justify-between items-center text-base">

@@ -3,10 +3,21 @@
         x-data="{
             selectedImage: '{{ $product->primary_image_url }}',
             quantity: 1,
+            selectedWrappingColor: 'أسود ملكي',
+            wrappingColors: [
+                { id: 'black', name: 'أسود ملكي', hex: '#1A1A1A', isLight: false },
+                { id: 'white', name: 'أبيض عاجي', hex: '#FFFFFF', isLight: true },
+                { id: 'gold', name: 'ذهبي فاخر', bgStyle: 'linear-gradient(135deg, #FDE68A 0%, #D4AF37 50%, #92400E 100%)', isLight: false },
+                { id: 'pink', name: 'زهري وردي', hex: '#E8A2B6', isLight: false },
+                { id: 'burgundy', name: 'عنابي مخملي', hex: '#4A2C4A', isLight: false },
+                { id: 'navy', name: 'كحلي داكن', hex: '#1B2A4A', isLight: false },
+                { id: 'beige', name: 'بيج كرافت', hex: '#D2B48C', isLight: true },
+            ],
             personalMessage: '',
             isWishlisted: {{ (auth()->check() && auth()->user()->wishlists()->where('product_id', $product->id)->exists()) ? 'true' : 'false' }},
             basePrice: {{ $product->base_price }},
             loading: false,
+            orderingNow: false,
             zoomOpen: false,
 
             get currentTotal() {
@@ -17,8 +28,9 @@
                 return Number(amount || 0).toLocaleString('en-US') + ' ل.س';
             },
 
-            async addToCart() {
+            async addToCart(redirectToCart = false) {
                 this.loading = true;
+                this.orderingNow = redirectToCart;
                 try {
                     const response = await fetch('/cart', {
                         method: 'POST',
@@ -30,6 +42,7 @@
                         body: JSON.stringify({
                             product_id: {{ $product->id }},
                             quantity: this.quantity,
+                            wrapping_color: this.selectedWrappingColor,
                             personal_message: this.personalMessage
                         })
                     });
@@ -42,6 +55,12 @@
                         } else {
                             Alpine.store('cart').increment(this.quantity);
                         }
+
+                        if (redirectToCart) {
+                            window.location.href = '{{ route('cart.index') }}';
+                            return;
+                        }
+
                         window.dispatchEvent(new CustomEvent('toast', { 
                             detail: { message: 'تمت إضافة الباقة إلى السلة بنجاح', type: 'success' } 
                         }));
@@ -56,6 +75,7 @@
                     }));
                 } finally {
                     this.loading = false;
+                    this.orderingNow = false;
                 }
             },
 
@@ -171,30 +191,25 @@
                     </button>
                 </div>
 
-                <!-- Thumbnails Strip -->
+                <!-- Thumbnails Strip (Only rendered if product has multiple images) -->
                 @php
-                    $gallery = [
-                        $product->primary_image_url,
-                        'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=600&q=80',
-                        'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=600&q=80',
-                    ];
-                    if (!empty($product->image_path)) {
-                        $gallery[0] = asset('storage/' . $product->image_path);
-                    }
+                    $gallery = $product->gallery_urls;
                 @endphp
 
-                <div class="flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-1 scrollbar-none">
-                    @foreach($gallery as $idx => $imgUrl)
-                        <button 
-                            @click="selectedImage = '{{ $imgUrl }}'"
-                            type="button" 
-                            class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl p-0.5 border-2 transition-all flex-shrink-0 cursor-pointer overflow-hidden bg-surface"
-                            :class="selectedImage === '{{ $imgUrl }}' ? 'border-primary shadow-sm ring-1 ring-primary' : 'border-neutral-200 opacity-60 hover:opacity-100 hover:border-neutral-300'"
-                        >
-                            <img src="{{ $imgUrl }}" alt="زاوية {{ $idx + 1 }}" class="w-full h-full object-cover rounded-[10px] sm:rounded-[13px]">
-                        </button>
-                    @endforeach
-                </div>
+                @if(count($gallery) > 1)
+                    <div class="flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-1 scrollbar-none">
+                        @foreach($gallery as $idx => $imgUrl)
+                            <button 
+                                @click="selectedImage = '{{ $imgUrl }}'"
+                                type="button" 
+                                class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl p-0.5 border-2 transition-all flex-shrink-0 cursor-pointer overflow-hidden bg-surface"
+                                :class="selectedImage === '{{ $imgUrl }}' ? 'border-primary shadow-sm ring-1 ring-primary' : 'border-neutral-200 opacity-60 hover:opacity-100 hover:border-neutral-300'"
+                            >
+                                <img src="{{ $imgUrl }}" alt="صورة {{ $idx + 1 }}" class="w-full h-full object-cover rounded-[10px] sm:rounded-[13px]">
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
             <!-- Details & Options Form Column -->
@@ -220,6 +235,9 @@
                 </p>
 
                 <!-- Bouquet Contents & Quantities (محتويات وكميات الباقة) -->
+                @php
+                    $arrangementPoints = $product->arrangement_points;
+                @endphp
                 <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-tertiary-50 border border-neutral-200/70 space-y-2">
                     <h3 class="text-xs font-bold text-primary flex items-center gap-1.5 sm:gap-2">
                         <svg class="w-4 h-4 text-secondary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,10 +246,63 @@
                         <span>محتويات وتفاصيل التنسيق:</span>
                     </h3>
                     <ul class="text-xs text-neutral-600 space-y-1.5 list-disc list-inside ps-1 leading-relaxed">
-                        <li>مجموعة ورود وأغصان طبيعية طازجة منتقاة يدوياً بعناية فائقة.</li>
-                        <li>تغليف قماشي/ورقي فاخر بتوقيع كشك الورد مع شريط ستان متناسق.</li>
-                        <li>كرت إهداء أنيق مجاني جاهز لكتابة رسالتك الخاصة.</li>
+                        @foreach($arrangementPoints as $point)
+                            <li>{{ $point }}</li>
+                        @endforeach
                     </ul>
+                </div>
+
+                <!-- Wrapping Color Selector (تحديد لون التغليف) -->
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <label class="font-bold text-xs sm:text-sm text-primary flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-secondary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            </svg>
+                            <span>لون التغليف المفضل:</span>
+                        </label>
+                        <span class="text-xs font-bold text-primary bg-tertiary-100 px-3 py-1 rounded-full border border-neutral-200/70" x-text="selectedWrappingColor"></span>
+                    </div>
+
+                    <!-- Wrapping Color Swatches Grid -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-2 sm:gap-2.5">
+                        <template x-for="color in wrappingColors" :key="color.id">
+                            <button 
+                                @click="selectedWrappingColor = color.name" 
+                                type="button" 
+                                class="group relative flex flex-col items-center justify-center p-2.5 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 cursor-pointer text-center bg-tertiary-50 hover:bg-white"
+                                :class="selectedWrappingColor === color.name ? 'border-primary bg-white shadow-sm ring-2 ring-primary/20 scale-[1.02]' : 'border-neutral-200/70 hover:border-neutral-300 opacity-80 hover:opacity-100'"
+                                :title="color.name"
+                            >
+                                <!-- Color Swatch Circle -->
+                                <div 
+                                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-inner flex items-center justify-center relative transition-transform duration-200 group-hover:scale-105"
+                                    :style="color.bgStyle ? `background: ${color.bgStyle}` : `background-color: ${color.hex}`"
+                                    :class="color.isLight ? 'border border-neutral-300' : 'border border-black/10'"
+                                >
+                                    <!-- Selected Checkmark -->
+                                    <template x-if="selectedWrappingColor === color.name">
+                                        <svg 
+                                            class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" 
+                                            :class="color.isLight ? 'text-neutral-900' : 'text-white'" 
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </template>
+                                </div>
+
+                                <!-- Color Title -->
+                                <span 
+                                    class="mt-1.5 text-[10px] sm:text-[11px] font-bold leading-tight line-clamp-1 transition-colors"
+                                    :class="selectedWrappingColor === color.name ? 'text-primary' : 'text-neutral-600 group-hover:text-primary'"
+                                    x-text="color.name"
+                                ></span>
+                            </button>
+                        </template>
+                    </div>
                 </div>
 
                 <!-- Personal Message Textarea (رسالتك الشخصية) -->
@@ -272,13 +343,13 @@
                         <div class="flex items-center gap-2">
                             <!-- Wishlist Button -->
                             <button 
-                                @click="toggleWishlist()" 
+                                @click="$store.wishlist.toggle({{ $product->id }})" 
                                 type="button" 
                                 class="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-neutral-200 text-neutral-600 hover:text-secondary hover:border-secondary transition-colors cursor-pointer bg-surface shadow-xs"
-                                title="إضافة للمفضلة"
+                                :title="$store.wishlist.has({{ $product->id }}) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
                                 aria-label="المفضلة"
                             >
-                                <svg class="w-4 h-4 sm:w-5 sm:h-5" :class="isWishlisted ? 'text-secondary fill-secondary' : 'text-neutral-400 fill-none'" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" :class="$store.wishlist.has({{ $product->id }}) ? 'text-secondary fill-secondary' : 'text-neutral-400 fill-none'" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                 </svg>
                             </button>
@@ -298,33 +369,59 @@
                         </div>
                     </div>
 
-                    <!-- Row 2: Full-width Primary Add to Cart Button -->
-                    <button 
-                        @click="addToCart()" 
-                        :disabled="loading"
-                        type="button" 
-                        class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-bold py-3.5 px-6 rounded-xl sm:rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50 cursor-pointer text-xs sm:text-sm md:text-base"
-                    >
-                        <template x-if="!loading">
-                            <span class="flex items-center justify-center gap-2 w-full">
-                                <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                </svg>
-                                <span>أضف إلى السلة</span>
-                                <span>—</span>
-                                <span class="font-body font-bold" x-text="formatMoney(currentTotal)"></span>
-                            </span>
-                        </template>
-                        <template x-if="loading">
-                            <span class="flex items-center gap-2">
-                                <svg class="animate-spin w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>جاري الإضافة...</span>
-                            </span>
-                        </template>
-                    </button>
+                    <!-- Row 2: Action CTA Buttons ("اطلب الآن" & "أضف إلى السلة") -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        
+                        <!-- 1. Primary "Order Now" Button (اطلب الآن - ينقل فوراً إلى السلة) -->
+                        <button 
+                            @click="addToCart(true)" 
+                            :disabled="loading"
+                            type="button" 
+                            class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm md:text-base order-1"
+                            title="طلب الباقة والانتقال فوراً إلى سلة التسوق"
+                        >
+                            <template x-if="!(loading && orderingNow)">
+                                <span>اطلب الآن</span>
+                            </template>
+                            <template x-if="loading && orderingNow">
+                                <span class="flex items-center justify-center gap-2">
+                                    <svg class="animate-spin w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>جاري التحويل...</span>
+                                </span>
+                            </template>
+                        </button>
+
+                        <!-- 2. Secondary "Add to Cart" Button (أضف إلى السلة) -->
+                        <button 
+                            @click="addToCart(false)" 
+                            :disabled="loading"
+                            type="button" 
+                            class="w-full bg-tertiary-100 hover:bg-secondary/30 active:bg-secondary/40 text-primary border border-secondary/60 hover:border-secondary font-bold py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm md:text-base order-2"
+                            title="إضافة الباقة إلى سلة التسوق ومتابعة التسوق"
+                        >
+                            <template x-if="!(loading && !orderingNow)">
+                                <span class="flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                    <span>أضف إلى السلة</span>
+                                </span>
+                            </template>
+                            <template x-if="loading && !orderingNow">
+                                <span class="flex items-center justify-center gap-2">
+                                    <svg class="animate-spin w-4 h-4 sm:w-5 sm:h-5 text-primary" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>جاري الإضافة...</span>
+                                </span>
+                            </template>
+                        </button>
+
+                    </div>
                 </div>
 
                 <!-- Delivery Note Banner Text -->
@@ -416,18 +513,20 @@
                 </div>
 
                 <!-- Lightbox Thumbnails Switcher -->
-                <div class="flex items-center gap-2 sm:gap-3 overflow-x-auto p-1.5 sm:p-2 bg-surface/15 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/10 scrollbar-none">
-                    @foreach($gallery as $idx => $imgUrl)
-                        <button 
-                            @click="selectedImage = '{{ $imgUrl }}'"
-                            type="button" 
-                            class="w-12 h-12 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl p-0.5 border-2 transition-all flex-shrink-0 cursor-pointer overflow-hidden"
-                            :class="selectedImage === '{{ $imgUrl }}' ? 'border-secondary shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'"
-                        >
-                            <img src="{{ $imgUrl }}" alt="زاوية {{ $idx + 1 }}" class="w-full h-full object-cover rounded-[6px] sm:rounded-[8px]">
-                        </button>
-                    @endforeach
-                </div>
+                @if(count($gallery) > 1)
+                    <div class="flex items-center gap-2 sm:gap-3 overflow-x-auto p-1.5 sm:p-2 bg-surface/15 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/10 scrollbar-none">
+                        @foreach($gallery as $idx => $imgUrl)
+                            <button 
+                                @click="selectedImage = '{{ $imgUrl }}'"
+                                type="button" 
+                                class="w-12 h-12 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl p-0.5 border-2 transition-all flex-shrink-0 cursor-pointer overflow-hidden"
+                                :class="selectedImage === '{{ $imgUrl }}' ? 'border-secondary shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'"
+                            >
+                                <img src="{{ $imgUrl }}" alt="صورة {{ $idx + 1 }}" class="w-full h-full object-cover rounded-[6px] sm:rounded-[8px]">
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
 
