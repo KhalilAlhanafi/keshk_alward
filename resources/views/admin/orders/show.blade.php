@@ -167,24 +167,34 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <div>
                         <p class="text-xs text-neutral-600 mb-2 font-bold">إثبات الدفع المرفوع من الزبون:</p>
-                        @if($proof)
-                            @if($isImage && $proofUrl)
-                                <div class="space-y-2">
-                                    <a href="{{ $proofUrl }}" target="_blank" title="انقر لعرض الصورة بالحجم الكامل" class="group relative block w-56 h-56 rounded-2xl overflow-hidden border-2 border-primary/20 bg-surface shadow-md hover:border-primary transition-all">
-                                        <img src="{{ $proofUrl }}" alt="إيصال شام كاش" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                        <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1">
-                                            <span>🔍 تكبير الصورة</span>
+                        @if($proof || $order->transaction_number)
+                            <div class="space-y-4">
+                                @if($proof)
+                                    @if($isImage && $proofUrl)
+                                        <div class="space-y-2">
+                                            <a href="{{ $proofUrl }}" target="_blank" title="انقر لعرض الصورة بالحجم الكامل" class="group relative block w-56 h-56 rounded-2xl overflow-hidden border-2 border-primary/20 bg-surface shadow-md hover:border-primary transition-all">
+                                                <img src="{{ $proofUrl }}" alt="إيصال شام كاش" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                                <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1">
+                                                    <span>🔍 تكبير الصورة</span>
+                                                </div>
+                                            </a>
+                                            <a href="{{ $proofUrl }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-primary font-bold hover:underline">
+                                                <span>عرض الصورة بالحجم الكامل ↗</span>
+                                            </a>
                                         </div>
-                                    </a>
-                                    <a href="{{ $proofUrl }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-primary font-bold hover:underline">
-                                        <span>عرض الصورة بالحجم الكامل ↗</span>
-                                    </a>
-                                </div>
-                            @else
-                                <div class="p-4 bg-surface border border-neutral-200 rounded-2xl text-sm font-bold font-body text-primary select-all">
-                                    رقم العملية / المرجع: {{ $proof }}
-                                </div>
-                            @endif
+                                    @else
+                                        <div class="p-3 bg-surface border border-neutral-200 rounded-xl text-sm font-bold font-body text-primary select-all">
+                                            مرفق نصي: {{ $proof }}
+                                        </div>
+                                    @endif
+                                @endif
+                                
+                                @if($order->transaction_number)
+                                    <div class="p-3 bg-surface border border-neutral-200 rounded-xl text-sm font-bold font-body text-primary select-all">
+                                        رقم العملية المرفق: {{ $order->transaction_number }}
+                                    </div>
+                                @endif
+                            </div>
                         @else
                             <p class="text-xs text-neutral-400 italic">لم يقم الزبون برفع إيصال حتى الآن.</p>
                         @endif

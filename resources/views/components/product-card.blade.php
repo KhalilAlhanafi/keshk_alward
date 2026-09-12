@@ -64,7 +64,7 @@
             }
         }
     }"
-    class="group bg-surface rounded-card shadow-soft overflow-hidden border border-neutral-100 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+    class="group bg-purple-50/70 rounded-card shadow-soft overflow-hidden border border-purple-100 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1"
 >
     <!-- Image & Badge Container -->
     <div class="relative aspect-square w-full overflow-hidden bg-tertiary-50">

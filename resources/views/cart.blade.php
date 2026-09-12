@@ -126,7 +126,7 @@
             <!-- Items List (2 Columns on Desktop in RTL) -->
             <div class="lg:col-span-2 space-y-4">
                 <template x-for="item in items" :key="item.id">
-                    <div class="bg-surface rounded-card p-4 md:p-6 border border-neutral-100 shadow-soft flex flex-col sm:flex-row items-center gap-4 justify-between transition-all">
+                    <div class="bg-purple-50/70 rounded-card p-4 md:p-6 border border-purple-100 shadow-soft flex flex-col sm:flex-row items-center gap-4 justify-between transition-all">
                         
                         <!-- Image & Product Details -->
                         <div class="flex items-center gap-4 w-full sm:w-auto">
@@ -196,7 +196,7 @@
 
             <!-- Order Summary Sidebar (Sticky Desktop) -->
             <div class="lg:col-span-1 sticky top-24">
-                <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-6">
+                <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-6">
                     <h2 class="font-headline-ar text-xl text-primary font-bold border-b border-neutral-100 pb-3">
                         ملخص الطلب
                     </h2>
@@ -242,7 +242,7 @@
         </div>
 
         <!-- 3. Empty-Cart State Container -->
-        <div x-show="items.length === 0" class="bg-surface rounded-card p-12 text-center border border-neutral-100 shadow-soft space-y-6 max-w-xl mx-auto font-body-ar">
+        <div x-show="items.length === 0" class="bg-purple-50/70 rounded-card p-12 text-center border border-purple-100 shadow-soft space-y-6 max-w-xl mx-auto font-body-ar">
             <div class="w-20 h-20 rounded-full bg-tertiary-100 text-primary flex items-center justify-center mx-auto">
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -274,7 +274,7 @@
         >
             <div @click="deleteModalOpen = false" class="fixed inset-0 bg-neutral-900/50 backdrop-blur-xs"></div>
             
-            <div class="bg-surface rounded-card p-6 max-w-sm w-full relative z-10 shadow-xl space-y-4 font-body-ar">
+            <div class="bg-purple-50 rounded-card p-6 max-w-sm w-full relative z-10 shadow-xl space-y-4 font-body-ar">
                 <h3 class="font-headline-ar text-xl text-primary font-bold">تأكيد الحذف</h3>
                 <p class="text-sm text-neutral-600">هل أنت تأكد من رغبتك في حذف هذا المنتج من سلة التسوق؟</p>
                 

@@ -154,7 +154,7 @@
         </nav>
 
         <!-- 2. Header Banner -->
-        <div class="bg-surface rounded-card p-6 md:p-8 shadow-soft border border-neutral-100 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div class="bg-purple-50/70 rounded-card p-6 md:p-8 shadow-soft border border-purple-100 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div class="space-y-2.5">
                 <span class="inline-block text-xs font-bold text-secondary bg-secondary/15 px-3 py-1 rounded-full mb-0.5">
                     تشكيلة كشك الورد
@@ -176,7 +176,7 @@
         </div>
 
         <!-- 3. Top Controls Bar (Category Pills & Sorting) -->
-        <div id="catalog-products-container" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-2xl shadow-soft border border-neutral-100">
+        <div id="catalog-products-container" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-purple-50/70 p-4 rounded-2xl shadow-soft border border-purple-100">
             
             <!-- Category Pills Navigation with Mobile Scroll Affordance -->
             <div class="relative w-full sm:w-auto overflow-hidden">
@@ -316,7 +316,7 @@
                                 }
                             }
                         }"
-                        class="group bg-surface rounded-card shadow-soft overflow-hidden border border-neutral-100 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+                        class="group bg-purple-50/70 rounded-card shadow-soft overflow-hidden border border-purple-100 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1"
                     >
                         <!-- Image & Badge Container -->
                         <div class="relative aspect-square w-full overflow-hidden bg-tertiary-50">

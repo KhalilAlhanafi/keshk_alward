@@ -299,7 +299,7 @@ test('same-day delivery cutoff validation works at 21:00 (9 PM)', function () {
         'delivery_area_id' => $area->id,
         'delivery_address' => 'العدوي',
         'delivery_date' => now()->setTimezone('Asia/Damascus')->format('Y-m-d'), // Today
-        'delivery_time_slot' => '21:00 - 23:00',
+        'delivery_time_slot' => '21:00',
         'payment_method' => 'cod',
     ]);
     $validResponse->assertStatus(200);
@@ -346,9 +346,9 @@ test('Sham Cash order retrieval displays wallet code from setting', function () 
         'recipient_name' => 'ماهر',
         'recipient_phone' => '+963944444444',
         'delivery_area_id' => $area->id,
-        'delivery_address' => 'شارع الجلاء',
+        'delivery_address' => 'Test Address',
         'delivery_date' => now()->addDay()->format('Y-m-d'),
-        'delivery_time_slot' => '12:00 - 15:00',
+        'delivery_time_slot' => '12:00',
         'payment_method' => 'sham_cash',
     ]);
 

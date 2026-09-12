@@ -5,6 +5,8 @@
             transactionNumber: '',
             uploading: false,
             uploadedProof: '{{ $order->payment_proof }}',
+            uploadedTransaction: '{{ $order->transaction_number }}',
+            isZoomed: false,
             
             async uploadProof() {
                 if (!this.proofFile && !this.transactionNumber) {
@@ -35,6 +37,7 @@
                     const data = await response.json();
                     if (response.ok) {
                         this.uploadedProof = data.payment_proof;
+                        this.uploadedTransaction = data.transaction_number;
                         window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تم رفع إثبات الدفع بنجاح!', type: 'success' } }));
                     } else {
                         window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تعذر رفع الإثبات', type: 'error' } }));
@@ -50,7 +53,7 @@
     >
 
         <!-- 1. Success Header Card -->
-        <div class="bg-surface rounded-card p-6 md:p-10 border border-neutral-100 shadow-soft text-center space-y-4">
+        <div class="bg-purple-50/70 rounded-card p-6 md:p-10 border border-purple-100 shadow-soft text-center space-y-4">
             <div class="w-16 h-16 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -90,7 +93,7 @@
                 $isRejected = ($pStatus === 'rejected') || ($oStatus === 'cancelled');
             @endphp
 
-            <div class="bg-tertiary-50 rounded-card p-6 md:p-8 border border-tertiary-200/60 shadow-soft space-y-4">
+            <div class="bg-purple-50/70 rounded-card p-6 md:p-8 border border-purple-100 shadow-soft space-y-4">
                 <div class="flex items-center gap-3 text-primary border-b border-tertiary-200 pb-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -175,23 +178,72 @@
                     @else
                         <!-- Pending / Upload States -->
                         <p>يرجى تحويل المبلغ المالي الكامل (<span class="font-bold text-primary font-body">{{ format_money($order->total) }}</span>) إلى رقم الحافظة التالي:</p>
-                        <div class="p-3 bg-surface border border-neutral-200 rounded-2xl inline-block font-body font-bold text-lg text-primary select-all">
-                            {{ $shamCashWallet ?? '0963900000000' }}
+                        <div class="flex flex-col sm:flex-row items-start gap-6 mt-2 mb-6">
+                            <!-- Wallet Number & Copy -->
+                            <div>
+                                <label class="block text-xs text-neutral-500 mb-1">رقم الحافظة:</label>
+                                <div class="flex items-center gap-2 p-3 bg-surface border border-neutral-200 rounded-2xl">
+                                    <span class="font-body font-bold text-lg text-primary select-all" id="wallet-number">{{ $shamCashWallet ?? '0963900000000' }}</span>
+                                    <button 
+                                        type="button"
+                                        @click="
+                                            navigator.clipboard.writeText('{{ $shamCashWallet ?? '0963900000000' }}');
+                                            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'تم نسخ رقم المحفظة بنجاح', type: 'success' } }));
+                                        "
+                                        class="p-2 bg-tertiary-100 hover:bg-tertiary-200 text-primary rounded-xl transition-colors cursor-pointer"
+                                        title="نسخ رقم المحفظة"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- QR Code Image & Download -->
+                            @php $qrImage = \App\Models\Setting::get('sham_cash_qr_image'); @endphp
+                            @if($qrImage)
+                                <div class="flex flex-col items-center gap-2">
+                                    <button type="button" @click="isZoomed = true" class="block cursor-pointer hover:opacity-90 transition-opacity" title="فتح الصورة">
+                                        <img src="{{ asset('storage/' . $qrImage) }}" alt="QR Code" class="w-48 h-48 object-contain rounded-2xl border border-neutral-200 shadow-sm bg-white p-2">
+                                    </button>
+                                    <a 
+                                        href="{{ asset('storage/' . $qrImage) }}" 
+                                        download="sham_cash_qr.png"
+                                        class="flex items-center gap-2 text-xs font-bold text-white bg-primary hover:bg-primary-600 px-4 py-2 rounded-xl transition-colors shadow-sm"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                        <span>تنزيل الصورة</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
 
                         <!-- If proof was already uploaded and under review -->
-                        <div x-show="uploadedProof" class="p-4 bg-amber-50 border border-amber-300/60 rounded-2xl flex items-start gap-3">
+                        <div x-show="uploadedProof || uploadedTransaction" class="p-4 bg-amber-50 border border-amber-300/60 rounded-2xl flex items-start gap-3">
                             <span class="text-xl">⏳</span>
                             <div class="text-xs text-amber-900 space-y-1">
                                 <h4 class="font-bold text-sm">تم استلام إثبات الدفع</h4>
                                 <p class="text-amber-800">
                                     الإيصال قيد المراجعة والتدقيق حالياً من قبل الإدارة. ستتغير حالة الطلب فور مطابقة العملية.
                                 </p>
+                                <div class="mt-2 flex gap-4">
+                                    <template x-if="uploadedProof">
+                                        <div class="bg-white/60 p-2 rounded-xl border border-amber-200">
+                                            <span class="font-bold block mb-1">صورة الإيصال:</span>
+                                            <a :href="'/storage/' + uploadedProof" target="_blank" class="text-amber-700 underline text-[10px]">عرض الصورة</a>
+                                        </div>
+                                    </template>
+                                    <template x-if="uploadedTransaction">
+                                        <div class="bg-white/60 p-2 rounded-xl border border-amber-200">
+                                            <span class="font-bold block mb-1">رقم العملية:</span>
+                                            <span x-text="uploadedTransaction" class="text-amber-700 text-[10px] font-body"></span>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Upload Proof Form (if not uploaded yet) -->
-                        <div x-show="!uploadedProof" class="pt-4 border-t border-tertiary-200 space-y-4">
+                        <div x-show="!uploadedProof && !uploadedTransaction" class="pt-4 border-t border-tertiary-200 space-y-4">
                             <h3 class="font-bold text-primary">رفع إثبات التحويل (صورة الإيصال أو رقم العملية):</h3>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -235,7 +287,7 @@
 
         <!-- 3. Ordered Items Breakdown -->
         @if($order->items && $order->items->count() > 0)
-            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+            <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-4">
                 <h3 class="font-headline-ar text-xl text-primary font-bold border-b border-neutral-100 pb-2">
                     المنتجات والخيارات المطلوبة
                 </h3>
@@ -272,7 +324,7 @@
 
         <!-- 4. Details & Address Breakdown -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-3">
+            <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-3">
                 <h3 class="font-headline-ar text-xl text-primary font-bold border-b border-neutral-100 pb-2">تفاصيل المستلم والتوصيل</h3>
                 <div class="space-y-2 text-xs md:text-sm text-neutral-700">
                     <p><span class="font-bold text-neutral-400">اسم المستلم:</span> {{ $order->recipient_name }}</p>
@@ -283,7 +335,7 @@
                 </div>
             </div>
 
-            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-3">
+            <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-3">
                 <h3 class="font-headline-ar text-xl text-primary font-bold border-b border-neutral-100 pb-2">ملخص الدفع والطلب</h3>
                 <div class="space-y-2 text-xs md:text-sm text-neutral-700">
                     <p><span class="font-bold text-neutral-400">طريقة الدفع:</span> {{ $order->payment_method->labelAr() }}</p>
@@ -346,6 +398,45 @@
                     </div>
                 </div>
             @endif
+        </div>
+
+        <!-- Lightbox Modal -->
+        <div 
+            x-show="isZoomed" 
+            x-cloak
+            @keydown.escape.window="isZoomed = false"
+            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+        >
+            <!-- Backdrop -->
+            <div 
+                x-show="isZoomed"
+                x-transition.opacity
+                @click="isZoomed = false"
+                class="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm"
+            ></div>
+
+            <!-- Modal Content -->
+            <div 
+                x-show="isZoomed"
+                x-transition.scale
+                class="relative z-10 max-w-lg w-full flex flex-col items-center gap-4"
+                @click.stop
+            >
+                <button 
+                    @click="isZoomed = false"
+                    type="button" 
+                    class="self-end p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                @php $qrImageModal = \App\Models\Setting::get('sham_cash_qr_image'); @endphp
+                @if($qrImageModal)
+                    <img src="{{ asset('storage/' . $qrImageModal) }}" alt="QR Code" class="w-full h-auto max-h-[80vh] object-contain rounded-3xl shadow-2xl bg-white p-4">
+                @endif
+            </div>
         </div>
 
     </div>

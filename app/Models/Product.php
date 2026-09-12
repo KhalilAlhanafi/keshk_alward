@@ -21,6 +21,8 @@ class Product extends Model
         'image_path',
         'is_best_seller',
         'is_active',
+        'flower_type',
+        'flower_count',
     ];
 
     protected $casts = [

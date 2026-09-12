@@ -49,6 +49,8 @@
                     base_price: '',
                     stock: 10,
                     description: '',
+                    flower_type: '',
+                    flower_count: '',
                     arrangement_details: '',
                     is_best_seller: false,
                     is_active: true,
@@ -96,6 +98,8 @@
                     base_price: prod.base_price,
                     stock: (prod.sizes && prod.sizes.length > 0) ? prod.sizes[0].stock : 10,
                     description: prod.description || '',
+                    flower_type: prod.flower_type || '',
+                    flower_count: prod.flower_count || '',
                     arrangement_details: prod.arrangement_details || '',
                     is_best_seller: Boolean(prod.is_best_seller),
                     is_active: Boolean(prod.is_active),
@@ -144,6 +148,8 @@
                 formData.append('base_price', this.form.base_price);
                 formData.append('description', this.form.description || '');
                 formData.append('arrangement_details', this.form.arrangement_details || '');
+                formData.append('flower_type', this.form.flower_type || '');
+                formData.append('flower_count', this.form.flower_count || '');
                 formData.append('is_best_seller', this.form.is_best_seller ? '1' : '0');
                 formData.append('is_active', this.form.is_active ? '1' : '0');
                 
@@ -582,6 +588,29 @@
                         ></textarea>
                     </div>
 
+                    <!-- Flower Details -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-neutral-700 mb-1">نوع الورد</label>
+                            <input 
+                                type="text"
+                                x-model="form.flower_type" 
+                                placeholder="مثال: جوري أحمر"
+                                class="w-full bg-tertiary-50 border border-neutral-200 rounded-2xl p-3 text-xs text-neutral-900 focus:border-primary focus:ring-1 focus:ring-primary"
+                            />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-neutral-700 mb-1">عدد الورد</label>
+                            <input 
+                                type="number"
+                                min="1"
+                                x-model="form.flower_count" 
+                                placeholder="مثال: 15"
+                                class="w-full bg-tertiary-50 border border-neutral-200 rounded-2xl p-3 text-xs text-neutral-900 focus:border-primary focus:ring-1 focus:ring-primary"
+                            />
+                        </div>
+                    </div>
+
                     <!-- Arrangement Details / Contents (محتويات وتفاصيل التنسيق) -->
                     <div>
                         <label class="block font-bold text-neutral-700 mb-1 flex items-center justify-between">
@@ -778,6 +807,29 @@
                             rows="2" 
                             class="w-full bg-tertiary-50 border border-neutral-200 rounded-2xl p-3 text-xs text-neutral-900 focus:border-primary focus:ring-1 focus:ring-primary"
                         ></textarea>
+                    </div>
+
+                    <!-- Flower Details -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-neutral-700 mb-1">نوع الورد</label>
+                            <input 
+                                type="text"
+                                x-model="form.flower_type" 
+                                placeholder="مثال: جوري أحمر"
+                                class="w-full bg-tertiary-50 border border-neutral-200 rounded-2xl p-3 text-xs text-neutral-900 focus:border-primary focus:ring-1 focus:ring-primary"
+                            />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-neutral-700 mb-1">عدد الورد</label>
+                            <input 
+                                type="number"
+                                min="1"
+                                x-model="form.flower_count" 
+                                placeholder="مثال: 15"
+                                class="w-full bg-tertiary-50 border border-neutral-200 rounded-2xl p-3 text-xs text-neutral-900 focus:border-primary focus:ring-1 focus:ring-primary"
+                            />
+                        </div>
                     </div>
 
                     <!-- Arrangement Details / Contents (محتويات وتفاصيل التنسيق) -->

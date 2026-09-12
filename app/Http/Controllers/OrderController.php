@@ -117,8 +117,9 @@ class OrderController extends Controller
             if ($request->hasFile('proof_file')) {
                 $path = $request->file('proof_file')->store('payment-proofs', 'public');
                 $order->payment_proof = $path;
-            } elseif ($request->filled('transaction_number')) {
-                $order->payment_proof = $request->input('transaction_number');
+            }
+            if ($request->filled('transaction_number')) {
+                $order->transaction_number = $request->input('transaction_number');
             }
 
             $order->save();
@@ -126,6 +127,7 @@ class OrderController extends Controller
             return response()->json([
                 'message' => 'تم رفع إثبات الدفع بنجاح. سيتم مراجعته قريباً.',
                 'payment_proof' => $order->payment_proof,
+                'transaction_number' => $order->transaction_number,
             ]);
         } catch (\Exception $e) {
             return response()->json([

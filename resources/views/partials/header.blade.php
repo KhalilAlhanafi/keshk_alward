@@ -1,4 +1,4 @@
-<header x-data="{ mobileMenuOpen: false }" class="sticky top-0 z-40 bg-surface border-b border-neutral-100 shadow-sm">
+<header x-data="{ mobileMenuOpen: false }" class="sticky top-0 z-40 bg-tertiary-100/80 backdrop-blur-md border-b border-secondary/30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 md:h-20">
 
@@ -13,26 +13,39 @@
             </div>
 
             <!-- Center: Desktop Navigation Links -->
-            <nav class="hidden md:flex items-center gap-8 font-body-ar text-sm font-medium text-neutral-700">
-                <a href="{{ route('home') }}" class="hover:text-primary transition-colors {{ request()->routeIs('home') ? 'text-primary font-bold' : '' }}">
+            <nav class="hidden md:flex items-center gap-3 font-body-ar text-sm font-medium">
+                <a href="{{ route('home') }}" class="px-4 py-2 rounded-2xl border border-secondary/20 bg-pink-50/60 hover:bg-pink-100 hover:border-secondary/50 hover:shadow-sm transition-all text-primary {{ request()->routeIs('home') ? 'bg-pink-100 border-secondary/50 shadow-sm font-bold' : '' }}">
                     الرئيسية
                 </a>
-                <a href="{{ route('catalog.index') }}" class="hover:text-primary transition-colors {{ request()->routeIs('catalog.*') ? 'text-primary font-bold' : '' }}">
+                <a href="{{ route('catalog.index') }}" class="px-4 py-2 rounded-2xl border border-secondary/20 bg-pink-50/60 hover:bg-pink-100 hover:border-secondary/50 hover:shadow-sm transition-all text-primary {{ request()->routeIs('catalog.*') ? 'bg-pink-100 border-secondary/50 shadow-sm font-bold' : '' }}">
                     المتجر
                 </a>
-                <a href="{{ route('contact') }}" class="hover:text-primary transition-colors {{ request()->routeIs('contact') ? 'text-primary font-bold' : '' }}">
+                <a href="{{ route('contact') }}" class="px-4 py-2 rounded-2xl border border-secondary/20 bg-pink-50/60 hover:bg-pink-100 hover:border-secondary/50 hover:shadow-sm transition-all text-primary {{ request()->routeIs('contact') ? 'bg-pink-100 border-secondary/50 shadow-sm font-bold' : '' }}">
                     اتصل بنا
                 </a>
             </nav>
 
             <!-- End Edge: Action Icons (Instagram, User Login, Cart) & Mobile List Button (Left side in RTL) -->
             <div class="flex items-center gap-1.5 sm:gap-2.5">
+                <!-- Facebook Icon -->
+                <a 
+                    href="{{ \App\Models\Setting::get('facebook_url', 'https://facebook.com') }}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="p-2 rounded-full text-white bg-[#1877F2] hover:bg-[#166fe5] hover:scale-105 transition-all shadow-sm"
+                    title="تابعنا على فيسبوك"
+                    aria-label="فيسبوك"
+                >
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                    </svg>
+                </a>
                 <!-- Instagram Icon -->
                 <a 
                     href="{{ \App\Models\Setting::get('instagram_url', 'https://instagram.com') }}" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    class="p-2 rounded-full text-neutral-700 hover:text-pink-600 hover:bg-pink-50/80 transition-colors"
+                    class="p-2 rounded-full text-white bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 hover:scale-105 transition-all shadow-sm"
                     title="تابعنا على انستغرام"
                     aria-label="انستغرام"
                 >
@@ -44,7 +57,7 @@
                 <!-- User Account / Login Button with Text -->
                 <a 
                     href="{{ Auth::check() ? route('dashboard') : route('login') }}" 
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-neutral-700 hover:text-primary hover:bg-tertiary-100 transition-colors text-xs font-bold font-body-ar border border-neutral-200/60 hover:border-secondary/40"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-primary/90 bg-blue-50/80 hover:text-blue-800 hover:bg-blue-100 transition-colors text-xs font-bold font-body-ar border border-blue-200 hover:border-blue-300"
                     title="{{ Auth::check() ? 'حسابي' : 'تسجيل الدخول' }}"
                 >
                     <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,7 +69,7 @@
                 <!-- Cart Icon with Live Badge -->
                 <a 
                     href="{{ route('cart.index') }}" 
-                    class="relative p-2 rounded-full text-neutral-700 hover:text-primary hover:bg-tertiary-100 transition-colors"
+                    class="relative p-2 rounded-full text-primary bg-pink-50 hover:bg-pink-100 transition-colors border border-primary/50 hover:border-primary"
                     title="سلة التسوق"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,7 +91,7 @@
                 <button 
                     @click="mobileMenuOpen = true" 
                     type="button" 
-                    class="md:hidden p-2 rounded-full text-neutral-700 hover:text-primary hover:bg-tertiary-100 transition-colors focus:outline-none cursor-pointer"
+                    class="md:hidden p-2 rounded-full text-primary/90 hover:text-primary hover:bg-tertiary-100 transition-colors focus:outline-none cursor-pointer"
                     aria-label="القائمة"
                     title="القائمة"
                 >
@@ -163,10 +176,26 @@
                             <!-- Footer Links in Drawer -->
                             <div class="border-t border-neutral-100 pt-4 space-y-3 font-body-ar text-sm">
                                 <a 
+                                    href="{{ \App\Models\Setting::get('facebook_url', 'https://facebook.com') }}" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    class="flex items-center justify-between p-3 rounded-2xl bg-[#1877F2] text-white font-bold hover:bg-[#166fe5] transition-colors shadow-sm"
+                                >
+                                    <span class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                            <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                                        </svg>
+                                        <span>فيسبوك كشك الورد</span>
+                                    </span>
+                                    <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                    </svg>
+                                </a>
+                                <a 
                                     href="{{ \App\Models\Setting::get('instagram_url', 'https://instagram.com') }}" 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
-                                    class="flex items-center justify-between p-3 rounded-2xl bg-pink-50/60 text-pink-700 font-bold hover:bg-pink-100/70 transition-colors"
+                                    class="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-bold shadow-sm"
                                 >
                                     <span class="flex items-center gap-2">
                                         <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">

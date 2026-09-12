@@ -15,14 +15,11 @@
 
             <!-- Content Overlay -->
             <div class="relative z-10 p-6 md:p-12 max-w-xl text-white space-y-4 font-body-ar">
-                <span class="inline-block bg-secondary text-primary-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    أناقة يدوية لكل مناسبة
-                </span>
                 <h1 class="font-headline-ar text-3xl md:text-5xl font-bold leading-tight">
-                    جمال يزهر في كل مناسبة
+                    {{ \App\Models\Setting::get('home_hero_title', 'جمال يزهر في كل مناسبة') }}
                 </h1>
                 <p class="text-tertiary-100 text-sm md:text-base leading-relaxed opacity-95">
-                    اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.
+                    {{ \App\Models\Setting::get('home_hero_subtitle', 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.') }}
                 </p>
                 <div class="pt-2">
                     <a 

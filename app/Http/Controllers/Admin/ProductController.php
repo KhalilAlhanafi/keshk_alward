@@ -107,6 +107,8 @@ class ProductController extends Controller
             'base_price' => ['required', 'integer', 'min:0'],
             'is_best_seller' => ['boolean'],
             'is_active' => ['boolean'],
+            'flower_type' => ['nullable', 'string', 'max:255'],
+            'flower_count' => ['nullable', 'integer', 'min:1'],
             'image' => ['nullable', 'image'],
             'images' => ['nullable', 'array'],
             'images.*' => ['nullable', 'image'],
@@ -145,6 +147,8 @@ class ProductController extends Controller
             'image_path' => $imagePath,
             'is_best_seller' => $request->boolean('is_best_seller', false),
             'is_active' => $request->boolean('is_active', true),
+            'flower_type' => $request->input('flower_type'),
+            'flower_count' => $request->input('flower_count'),
         ]);
 
         // Create product sizes
@@ -232,6 +236,8 @@ class ProductController extends Controller
             'base_price' => ['required', 'integer', 'min:0'],
             'is_best_seller' => ['boolean'],
             'is_active' => ['boolean'],
+            'flower_type' => ['nullable', 'string', 'max:255'],
+            'flower_count' => ['nullable', 'integer', 'min:1'],
             'image' => ['nullable', 'image'],
             'images' => ['nullable', 'array'],
             'images.*' => ['nullable', 'image'],
@@ -301,6 +307,8 @@ class ProductController extends Controller
             'image_path' => $imagePath,
             'is_best_seller' => $request->boolean('is_best_seller', false),
             'is_active' => $request->boolean('is_active', true),
+            'flower_type' => $request->input('flower_type'),
+            'flower_count' => $request->input('flower_count'),
         ]);
 
         // Sync sizes: delete those not in request, update/create remaining

@@ -68,6 +68,7 @@
                 method="POST" 
                 action="{{ route('admin.settings.update') }}" 
                 @submit.prevent="submitSettings($event)"
+                enctype="multipart/form-data"
                 class="space-y-8 max-w-3xl"
             >
                 @csrf
@@ -96,6 +97,24 @@
                         <p class="text-[11px] text-neutral-400 mt-1">
                             هذا الرمز هو الذي يظهر للزبون عند اختيار الدفع بشام كاش ليقوم بالتحويل إليه.
                         </p>
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">
+                            صورة رمز الاستجابة السريعة (QR Code) لشام كاش
+                        </label>
+                        <input 
+                            type="file" 
+                            name="sham_cash_qr_image" 
+                            accept="image/*"
+                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
+                        >
+                        @if(isset($settings['sham_cash_qr_image']) && $settings['sham_cash_qr_image'])
+                            <div class="mt-3">
+                                <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
+                                <img src="{{ asset('storage/' . $settings['sham_cash_qr_image']) }}" alt="QR Code" class="h-24 object-contain rounded-lg border border-neutral-200">
+                            </div>
+                        @endif
                     </div>
 
                     <div class="pt-2">
@@ -170,23 +189,22 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-neutral-700 mb-1">نص البانر الرئيسي بالصفحة الرئيسية</label>
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">العنوان الرئيسي في الصفحة الرئيسية</label>
                         <input 
                             type="text" 
-                            name="hero_banner_text" 
-                            value="{{ old('hero_banner_text', $settings['hero_banner_text'] ?? 'أجمل التنسيقات والورود الطبيعية لجميع المناسبات') }}" 
+                            name="home_hero_title" 
+                            value="{{ old('home_hero_title', $settings['home_hero_title'] ?? 'جمال يزهر في كل مناسبة') }}" 
                             class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
                         >
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-neutral-700 mb-1">النص الترويجي بشريط الإعلانات العلوي (اختياري)</label>
-                        <input 
-                            type="text" 
-                            name="promo_banner_text" 
-                            value="{{ old('promo_banner_text', $settings['promo_banner_text'] ?? 'توصيل مجاني للطلبات فوق 200,000 ل.س') }}" 
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">النص الفرعي في الصفحة الرئيسية</label>
+                        <textarea 
+                            name="home_hero_subtitle" 
+                            rows="2"
                             class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
-                        >
+                        >{{ old('home_hero_subtitle', $settings['home_hero_subtitle'] ?? 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.') }}</textarea>
                     </div>
                 </div>
 

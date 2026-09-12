@@ -35,6 +35,7 @@ class Order extends Model
         'payment_verified_at',
         'verified_by',
         'rejection_reason',
+        'transaction_number',
     ];
 
     protected $casts = [

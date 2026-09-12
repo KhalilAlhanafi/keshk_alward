@@ -66,7 +66,7 @@
                             <div>
                                 <span class="block text-xs font-semibold text-neutral-400">تواصل مباشر واتساب</span>
                                 <a 
-                                    href="https://wa.me/{{ $whatsappNumber }}?text={{ urlencode('مرحباً كشك الورد، أود الاستفسار عن باقات الورد والخدمات.') }}" 
+                                    href="https://wa.me/{{ $whatsappNumber }}?text={{ urlencode('مرحبا كشك الورد ، هل يمكنني الاستفسار او طلب شيء غير موجود على الموقع') }}" 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     class="inline-flex items-center gap-1.5 text-sm md:text-base font-bold text-emerald-700 hover:text-emerald-800 transition-colors mt-0.5"

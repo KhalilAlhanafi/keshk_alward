@@ -133,7 +133,7 @@
             <div class="lg:col-span-2 space-y-6">
                 
                 <!-- 1. Contact Information Card -->
-                <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+                <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-4">
                     <div class="flex items-center gap-3 text-primary border-b border-neutral-100 pb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -143,7 +143,12 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">الاسم الكامل *</label>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>الاسم الكامل</span>
+                            </label>
                             <input 
                                 type="text" 
                                 x-model="fullName" 
@@ -152,7 +157,12 @@
                             >
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">رقم الجوال السوري *</label>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <span>رقم الجوال السوري</span>
+                            </label>
                             <div class="flex items-center rounded-2xl border border-neutral-200 bg-tertiary-50 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden transition-colors" dir="ltr">
                                 <span class="bg-tertiary-100 text-primary font-bold text-xs px-3.5 py-2.5 border-e border-neutral-200 select-none flex items-center gap-1 font-body flex-shrink-0">
                                     🇸🇾 +963
@@ -181,7 +191,7 @@
                 </div>
 
                 <!-- 2. Delivery Address Card -->
-                <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+                <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-4">
                     <div class="flex items-center gap-3 text-primary border-b border-neutral-100 pb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -192,7 +202,12 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">المدينة *</label>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1v1H9V7zm5 0h1v1h-1V7zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1z" />
+                                </svg>
+                                <span>المدينة</span>
+                            </label>
                             <div class="relative">
                                 <select 
                                     x-model="selectedCity"
@@ -211,7 +226,13 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">المنطقة *</label>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>المنطقة</span>
+                            </label>
                             <div class="relative">
                                 <select 
                                     x-model="selectedAreaId" 
@@ -230,7 +251,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-neutral-700 mb-1">العنوان بالتفصيل *</label>
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                            <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            <span>العنوان بالتفصيل</span>
+                        </label>
                         <textarea 
                             x-model="deliveryAddress" 
                             rows="3" 
@@ -241,7 +267,7 @@
                 </div>
 
                 <!-- 3. Delivery Timing Card -->
-                <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+                <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-4">
                     <div class="flex items-center gap-3 text-primary border-b border-neutral-100 pb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -251,7 +277,12 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">تاريخ التوصيل *</label>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>تاريخ التوصيل</span>
+                            </label>
                             <input 
                                 type="date" 
                                 x-model="deliveryDate" 
@@ -269,7 +300,12 @@
                             @endif
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">فترة التوصيل *</label>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>فترة التوصيل</span>
+                            </label>
                             <div class="relative">
                                 <select 
                                     x-model="deliveryTimeSlot" 
@@ -301,7 +337,7 @@
                 </div>
 
                 <!-- 4. Payment Method Card -->
-                <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+                <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-4">
                     <div class="flex items-center gap-3 text-primary border-b border-neutral-100 pb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -376,7 +412,7 @@
 
             <!-- Order Summary Sidebar Column (1 Column Desktop in RTL) -->
             <div class="lg:col-span-1 sticky top-24 space-y-6">
-                <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-6">
+                <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-6">
                     <h2 class="font-headline-ar text-xl text-primary font-bold border-b border-neutral-100 pb-3">
                         ملخص الطلب
                     </h2>

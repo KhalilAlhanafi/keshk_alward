@@ -3,15 +3,11 @@
         x-data="{
             selectedImage: '{{ $product->primary_image_url }}',
             quantity: 1,
-            selectedWrappingColor: 'أسود ملكي',
+            selectedWrappingColor: 'أسود',
             wrappingColors: [
-                { id: 'black', name: 'أسود ملكي', hex: '#1A1A1A', isLight: false },
-                { id: 'white', name: 'أبيض عاجي', hex: '#FFFFFF', isLight: true },
-                { id: 'gold', name: 'ذهبي فاخر', bgStyle: 'linear-gradient(135deg, #FDE68A 0%, #D4AF37 50%, #92400E 100%)', isLight: false },
-                { id: 'pink', name: 'زهري وردي', hex: '#E8A2B6', isLight: false },
-                { id: 'burgundy', name: 'عنابي مخملي', hex: '#4A2C4A', isLight: false },
-                { id: 'navy', name: 'كحلي داكن', hex: '#1B2A4A', isLight: false },
-                { id: 'beige', name: 'بيج كرافت', hex: '#D2B48C', isLight: true },
+                { id: 'black', name: 'أسود', hex: '#1A1A1A', isLight: false },
+                { id: 'white', name: 'أبيض', hex: '#FFFFFF', isLight: true },
+                { id: 'pink', name: 'زهر', hex: '#E8A2B6', isLight: false },
             ],
             personalMessage: '',
             isWishlisted: {{ (auth()->check() && auth()->user()->wishlists()->where('product_id', $product->id)->exists()) ? 'true' : 'false' }},
@@ -213,7 +209,7 @@
             </div>
 
             <!-- Details & Options Form Column -->
-            <div class="space-y-5 sm:space-y-6 font-body-ar bg-surface rounded-2xl md:rounded-card p-4 sm:p-6 md:p-8 border border-neutral-100 shadow-soft">
+            <div class="space-y-5 sm:space-y-6 font-body-ar bg-purple-50/70 rounded-2xl md:rounded-card p-4 sm:p-6 md:p-8 border border-purple-100 shadow-soft">
                 
                 <!-- Category Tag & Product Title -->
                 <div>
@@ -246,6 +242,13 @@
                         <span>محتويات وتفاصيل التنسيق:</span>
                     </h3>
                     <ul class="text-xs text-neutral-600 space-y-1.5 list-disc list-inside ps-1 leading-relaxed">
+                        @if($product->flower_type || $product->flower_count)
+                            <li>
+                                @if($product->flower_type) نوع الورد: {{ $product->flower_type }} @endif
+                                @if($product->flower_type && $product->flower_count) - @endif
+                                @if($product->flower_count) العدد: {{ $product->flower_count }} @endif
+                            </li>
+                        @endif
                         @foreach($arrangementPoints as $point)
                             <li>{{ $point }}</li>
                         @endforeach
@@ -307,7 +310,7 @@
 
                 <!-- Personal Message Textarea (رسالتك الشخصية) -->
                 <div class="space-y-1.5 sm:space-y-2">
-                    <label class="font-bold text-xs sm:text-sm text-primary block">رسالتك الشخصية (اختياري):</label>
+                    <label class="font-bold text-xs sm:text-sm text-primary block">الكرت :</label>
                     <textarea 
                         x-model="personalMessage" 
                         rows="3" 
