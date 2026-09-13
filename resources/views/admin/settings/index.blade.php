@@ -188,6 +188,24 @@
                         </h3>
                     </div>
 
+                    <div class="pt-2 mb-4">
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">
+                            الصورة الكبيرة (Hero Image)
+                        </label>
+                        <input 
+                            type="file" 
+                            name="home_hero_image" 
+                            accept="image/*"
+                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
+                        >
+                        @if(isset($settings['home_hero_image']) && $settings['home_hero_image'])
+                            <div class="mt-3">
+                                <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
+                                <img src="{{ asset('storage/' . $settings['home_hero_image']) }}" alt="Hero Image" class="h-24 object-cover rounded-lg border border-neutral-200">
+                            </div>
+                        @endif
+                    </div>
+
                     <div>
                         <label class="block text-xs font-bold text-neutral-700 mb-1">العنوان الرئيسي في الصفحة الرئيسية</label>
                         <input 
@@ -205,6 +223,41 @@
                             rows="2"
                             class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
                         >{{ old('home_hero_subtitle', $settings['home_hero_subtitle'] ?? 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.') }}</textarea>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-neutral-100">
+                        <h4 class="font-bold text-neutral-800 text-sm mb-4">قسم البانر الترويجي (تنسيقات خاصة)</h4>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-neutral-700 mb-1">الكلمة الدلالية (Badge)</label>
+                                <input 
+                                    type="text" 
+                                    name="promo_banner_badge" 
+                                    value="{{ old('promo_banner_badge', $settings['promo_banner_badge'] ?? 'تنسيقات خاصة') }}" 
+                                    class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-neutral-700 mb-1">عنوان البانر الترويجي</label>
+                                <input 
+                                    type="text" 
+                                    name="promo_banner_title" 
+                                    value="{{ old('promo_banner_title', $settings['promo_banner_title'] ?? 'احتفل بأجمل اللحظات مع من تحب') }}" 
+                                    class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-neutral-700 mb-1">نص البانر الترويجي</label>
+                                <textarea 
+                                    name="promo_banner_text" 
+                                    rows="2"
+                                    class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
+                                >{{ old('promo_banner_text', $settings['promo_banner_text'] ?? 'صمِّم باقتك الخاصة واضف إليها كرت إهداء وشوكولاتة فاخرة ليصلك في الوقت المحدد.') }}</textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -75,7 +75,7 @@ export default {
                     800: '#565254',
                     900: '#4A4748',
                 },
-                background: '#d6bbd6', // Darker soft plum/lavender background
+                background: '#c09ac0', // Darker soft plum/lavender background
                 surface: '#FFFFFF',
                 success: '#16A34A', // TODO: confirm exact hex
                 warning: '#F59E0B', // TODO: confirm exact hex

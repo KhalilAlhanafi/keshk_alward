@@ -32,7 +32,7 @@
                     href="{{ \App\Models\Setting::get('facebook_url', 'https://facebook.com') }}" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    class="p-2 rounded-full text-white bg-[#1877F2] hover:bg-[#166fe5] hover:scale-105 transition-all shadow-sm"
+                    class="hidden md:block p-2 rounded-full text-white bg-[#1877F2] hover:bg-[#166fe5] hover:scale-105 transition-all shadow-sm"
                     title="تابعنا على فيسبوك"
                     aria-label="فيسبوك"
                 >
@@ -45,7 +45,7 @@
                     href="{{ \App\Models\Setting::get('instagram_url', 'https://instagram.com') }}" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    class="p-2 rounded-full text-white bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 hover:scale-105 transition-all shadow-sm"
+                    class="hidden md:block p-2 rounded-full text-white bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 hover:scale-105 transition-all shadow-sm"
                     title="تابعنا على انستغرام"
                     aria-label="انستغرام"
                 >

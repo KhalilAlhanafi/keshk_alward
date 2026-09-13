@@ -5,7 +5,7 @@
         <section class="relative rounded-card overflow-hidden shadow-soft bg-tertiary-100 min-h-[380px] md:min-h-[480px] flex items-center">
             <!-- Hero Background Image -->
             <img 
-                src="{{ asset('storage/hero-bg.jpg') }}" 
+                src="{{ \App\Models\Setting::get('home_hero_image') ? asset('storage/' . \App\Models\Setting::get('home_hero_image')) : asset('storage/hero-bg.jpg') }}" 
                 alt="كشك الورد - باقات زهور فاخرة" 
                 class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85]"
             >
@@ -186,13 +186,13 @@
         <section class="bg-tertiary-200/60 rounded-card p-6 md:p-10 border border-tertiary-300/40 flex flex-col md:flex-row items-center justify-between gap-6 shadow-soft">
             <div class="space-y-2 text-center md:text-start font-body-ar">
                 <span class="inline-block bg-secondary text-primary-950 text-xs font-bold px-3 py-1 rounded-full">
-                    تنسيقات خاصة
+                    {{ \App\Models\Setting::get('promo_banner_badge', 'تنسيقات خاصة') }}
                 </span>
                 <h3 class="font-headline-ar text-2xl md:text-3xl text-primary font-bold">
-                    احتفل بأجمل اللحظات مع من تحب
+                    {{ \App\Models\Setting::get('promo_banner_title', 'احتفل بأجمل اللحظات مع من تحب') }}
                 </h3>
                 <p class="text-neutral-600 text-sm max-w-lg">
-                    صمِّم باقتك الخاصة واضف إليها كرت إهداء وشوكولاتة فاخرة ليصلك في الوقت المحدد.
+                    {{ \App\Models\Setting::get('promo_banner_text', 'صمِّم باقتك الخاصة واضف إليها كرت إهداء وشوكولاتة فاخرة ليصلك في الوقت المحدد.') }}
                 </p>
             </div>
             <a 
