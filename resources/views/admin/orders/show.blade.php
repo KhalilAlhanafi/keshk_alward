@@ -154,7 +154,7 @@
                         } elseif (\Illuminate\Support\Str::startsWith($proof, ['storage/', '/storage/'])) {
                             $proofUrl = asset(ltrim($proof, '/'));
                         } else {
-                            $proofUrl = asset('storage/' . ltrim(str_replace('public/', '', $proof), '/'));
+                            $proofUrl = route('storage.serve', ['path' => ltrim(str_replace('public/', '', $proof), '/')]);
                         }
                     }
                 }

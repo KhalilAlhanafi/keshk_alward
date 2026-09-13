@@ -112,7 +112,7 @@
                         @if(isset($settings['sham_cash_qr_image']) && $settings['sham_cash_qr_image'])
                             <div class="mt-3">
                                 <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
-                                <img src="{{ asset('storage/' . $settings['sham_cash_qr_image']) }}" alt="QR Code" class="h-24 object-contain rounded-lg border border-neutral-200">
+                                <img src="{{ route('storage.serve', ['path' => $settings['sham_cash_qr_image']]) }}" alt="QR Code" class="h-24 object-contain rounded-lg border border-neutral-200">
                             </div>
                         @endif
                     </div>
@@ -201,7 +201,7 @@
                         @if(isset($settings['home_hero_image']) && $settings['home_hero_image'])
                             <div class="mt-3">
                                 <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
-                                <img src="{{ asset('storage/' . $settings['home_hero_image']) }}" alt="Hero Image" class="h-24 object-cover rounded-lg border border-neutral-200">
+                                <img src="{{ route('storage.serve', ['path' => $settings['home_hero_image']]) }}" alt="Hero Image" class="h-24 object-cover rounded-lg border border-neutral-200">
                             </div>
                         @endif
                     </div>

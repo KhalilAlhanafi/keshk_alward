@@ -97,11 +97,11 @@ class Product extends Model
                     $urls = [];
                     foreach ($decoded as $item) {
                         if (is_string($item)) {
-                            $urls[] = str_starts_with($item, 'http') ? $item : asset('storage/' . $item);
+                            $urls[] = str_starts_with($item, 'http') ? $item : route('storage.serve', ['path' => $item]);
                         } elseif (is_array($item)) {
                             $p = $item['medium'] ?? $item['original'] ?? $item['thumbnail'] ?? $item['large'] ?? null;
                             if ($p) {
-                                $urls[] = str_starts_with($p, 'http') ? $p : asset('storage/' . $p);
+                                $urls[] = str_starts_with($p, 'http') ? $p : route('storage.serve', ['path' => $p]);
                             }
                         }
                     }
@@ -112,13 +112,13 @@ class Product extends Model
                     // Single image variant map: {"original": "...", "medium": "..."}
                     $p = $decoded['medium'] ?? $decoded['original'] ?? $decoded['thumbnail'] ?? $decoded['large'] ?? null;
                     if ($p) {
-                        return [str_starts_with($p, 'http') ? $p : asset('storage/' . $p)];
+                        return [str_starts_with($p, 'http') ? $p : route('storage.serve', ['path' => $p])];
                     }
                 }
             }
         }
 
-        return [str_starts_with($raw, 'http') ? $raw : asset('storage/' . $raw)];
+        return [str_starts_with($raw, 'http') ? $raw : route('storage.serve', ['path' => $raw])];
     }
 
     /**

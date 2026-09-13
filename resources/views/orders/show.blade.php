@@ -203,10 +203,10 @@
                             @if($qrImage)
                                 <div class="flex flex-col items-center gap-2">
                                     <button type="button" @click="isZoomed = true" class="block cursor-pointer hover:opacity-90 transition-opacity" title="فتح الصورة">
-                                        <img src="{{ asset('storage/' . $qrImage) }}" alt="QR Code" class="w-48 h-48 object-contain rounded-2xl border border-neutral-200 shadow-sm bg-white p-2">
+                                        <img src="{{ route('storage.serve', ['path' => $qrImage]) }}" alt="QR Code" class="w-48 h-48 object-contain rounded-2xl border border-neutral-200 shadow-sm bg-white p-2">
                                     </button>
                                     <a 
-                                        href="{{ asset('storage/' . $qrImage) }}" 
+                                        href="{{ route('storage.serve', ['path' => $qrImage]) }}"
                                         download="sham_cash_qr.png"
                                         class="flex items-center gap-2 text-xs font-bold text-white bg-primary hover:bg-primary-600 px-4 py-2 rounded-xl transition-colors shadow-sm"
                                     >
@@ -434,7 +434,7 @@
                 </button>
                 @php $qrImageModal = \App\Models\Setting::get('sham_cash_qr_image'); @endphp
                 @if($qrImageModal)
-                    <img src="{{ asset('storage/' . $qrImageModal) }}" alt="QR Code" class="w-full h-auto max-h-[80vh] object-contain rounded-3xl shadow-2xl bg-white p-4">
+                    <img src="{{ route('storage.serve', ['path' => $qrImageModal]) }}" alt="QR Code" class="w-full h-auto max-h-[80vh] object-contain rounded-3xl shadow-2xl bg-white p-4">
                 @endif
             </div>
         </div>

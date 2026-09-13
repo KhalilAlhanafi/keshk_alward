@@ -207,7 +207,7 @@
                                 <td class="p-3 font-bold text-primary flex items-center gap-3">
                                     @if($cat->image_url || $cat->image_path)
                                         <img 
-                                            src="{{ $cat->image_url ?? asset('storage/' . $cat->image_path) }}" 
+                                            src="{{ $cat->image_url ?? route('storage.serve', ['path' => $cat->image_path]) }}" 
                                             alt="{{ $cat->name }}" 
                                             class="w-10 h-10 rounded-xl object-cover border border-neutral-100 bg-tertiary-50 flex-shrink-0"
                                         >
