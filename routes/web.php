@@ -169,3 +169,9 @@ Route::get('/health', function () {
         ],
     ]);
 })->name('health');
+
+Route::get('/migrate-db', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+    return 'Database migrated and seeded successfully! You can now visit the homepage.';
+});
