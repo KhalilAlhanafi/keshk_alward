@@ -130,8 +130,10 @@ class OrderController extends Controller
                 'transaction_number' => $order->transaction_number,
             ]);
         } catch (\Exception $e) {
+            \Log::error('Upload Proof Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             return response()->json([
-                'message' => 'حدث خطأ أثناء رفع إثبات الدفع.'
+                'message' => 'حدث خطأ أثناء رفع إثبات الدفع.',
+                'error_debug' => $e->getMessage(),
             ], 500);
         }
     }
