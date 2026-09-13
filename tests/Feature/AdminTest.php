@@ -215,7 +215,7 @@ test('admin can upload product with image variant processing and long image_path
     $product = Product::where('sku', 'KW-9904')->first();
     expect($product)->not->toBeNull()
         ->and($product->image_path)->not->toBeNull()
-        ->and($product->primary_image_url)->toContain('storage/products/');
+        ->and($product->primary_image_url)->toContain('storage-serve?path=products');
 });
 
 test('admin can upload multiple images, customize arrangement details, and omit sku', function () {
