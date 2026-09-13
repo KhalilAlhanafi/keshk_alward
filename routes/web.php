@@ -16,6 +16,19 @@ use Illuminate\Support\Facades\DB;
 //  Public Routes
 // ───────────────────────────────────────────────────────────
 
+// Serve Storage Files Fallback (For Wasmer Edge environments where symlinks are restricted)
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+    return response()->file($fullPath, [
+        'Content-Type' => $mime,
+        'Cache-Control' => 'public, max-age=31536000'
+    ]);
+})->where('path', '.*');
+
 // Phase 1 Test Route & Styleguide
 Route::get('/phase1-test', function () {
     return view('layouts.test');
