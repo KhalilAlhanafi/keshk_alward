@@ -40,7 +40,8 @@
                         this.uploadedTransaction = data.transaction_number;
                         window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تم رفع إثبات الدفع بنجاح!', type: 'success' } }));
                     } else {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تعذر رفع الإثبات', type: 'error' } }));
+                        const errorMsg = data.error_debug ? data.message + " - " + data.error_debug : data.message || 'تعذر رفع الإثبات';
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: errorMsg, type: 'error' } }));
                     }
                 } catch (e) {
                     window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'حدث خطأ في الاتصال بالسيرفر', type: 'error' } }));
