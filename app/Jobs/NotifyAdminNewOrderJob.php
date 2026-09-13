@@ -27,7 +27,9 @@ class NotifyAdminNewOrderJob implements ShouldQueue
     public function handle(): void
     {
         // Notify all users that have admin or store_manager role
-        $admins = User::role(['admin', 'store_manager'])->get();
+        $admins = User::whereHas('roles', function($q) {
+            $q->whereIn('name', ['admin', 'store_manager']);
+        })->get();
 
         if ($admins->isEmpty()) {
             Log::warning("NotifyAdminNewOrderJob: no admin/store_manager users found to notify.");

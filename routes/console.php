@@ -38,7 +38,9 @@ Schedule::call(function () {
         return; // Nothing to report
     }
 
-    $admins = \App\Models\User::role(['admin', 'store_manager'])->get();
+    $admins = \App\Models\User::whereHas('roles', function($q) {
+        $q->whereIn('name', ['admin', 'store_manager']);
+    })->get();
 
     foreach ($admins as $admin) {
         $admin->notify(new \App\Notifications\PendingOrdersDigestNotification($pendingCount));
