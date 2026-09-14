@@ -43,9 +43,11 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
 Route::get('/wasmer-migrate', function () {
     try {
         \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders DROP COLUMN transaction_number;");
-    } catch (\Exception $e) {
-        // Ignore if column does not exist
-    }
+    } catch (\Exception $e) {}
+    try {
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders MODIFY payment_proof LONGTEXT NULL;");
+    } catch (\Exception $e) {}
+    
     
     try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);

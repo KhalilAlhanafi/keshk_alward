@@ -135,27 +135,9 @@ class OrderController extends Controller
             if ($request->input('proof_file_base64')) {
                 $base64 = $request->input('proof_file_base64');
                 if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
-                    $base64 = substr($base64, strpos($base64, ',') + 1);
-                    $type = strtolower($type[1]); 
-                    $base64 = str_replace(' ', '+', $base64);
-                    $image = base64_decode($base64);
-                    
-                    if ($image === false) {
-                        throw new \Exception('فشل في فك تشفير الصورة');
-                    }
-                    
-                    $filename = 'payment-proofs/' . uniqid() . '.' . $type;
-                    $dir = storage_path('app/public/payment-proofs');
-                    
-                    if (!is_dir($dir)) {
-                        @mkdir($dir, 0777, true);
-                    }
-                    
-                    if (file_put_contents(storage_path('app/public/' . $filename), $image) === false) {
-                         throw new \Exception('غير قادر على حفظ الصورة في مجلد: ' . $dir);
-                    }
-                    
-                    $order->payment_proof = $filename;
+                    // Save the raw base64 directly to the database!
+                    // This bypasses the ephemeral filesystem of Wasmer Edge entirely.
+                    $order->payment_proof = $base64;
                 }
             }
             if (!empty($request->input('transaction_number'))) {

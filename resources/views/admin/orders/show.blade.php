@@ -145,11 +145,13 @@
                 $proofUrl = null;
 
                 if ($proof) {
-                    $isImage = preg_match('/\.(jpg|jpeg|png|webp|gif|svg)$/i', $proof)
-                        || \Illuminate\Support\Str::startsWith($proof, ['payment-proofs/', 'storage/payment-proofs/', 'http://', 'https://']);
+                    $isImage = \Illuminate\Support\Str::endsWith(strtolower($proof), ['.jpg', '.jpeg', '.png', '.webp', '.gif'])
+                        || \Illuminate\Support\Str::startsWith($proof, ['payment-proofs/', 'storage/payment-proofs/', 'http://', 'https://', 'data:image/']);
 
                     if ($isImage) {
-                        if (\Illuminate\Support\Str::startsWith($proof, ['http://', 'https://'])) {
+                        if (\Illuminate\Support\Str::startsWith($proof, ['data:image/'])) {
+                            $proofUrl = $proof;
+                        } elseif (\Illuminate\Support\Str::startsWith($proof, ['http://', 'https://'])) {
                             $proofUrl = $proof;
                         } elseif (\Illuminate\Support\Str::startsWith($proof, ['storage/', '/storage/'])) {
                             $proofUrl = asset(ltrim($proof, '/'));
