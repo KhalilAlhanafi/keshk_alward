@@ -96,7 +96,7 @@
                         value="{{ old('email') }}" 
                         dir="ltr"
                         placeholder="example@email.com"
-                        class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl pl-4 pr-10 py-2.5 text-xs md:text-sm text-left placeholder:text-left font-body text-neutral-800 transition-colors"
+                        class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl ps-4 pe-10 py-2.5 text-xs md:text-sm text-start placeholder:text-start font-body text-neutral-800 transition-colors"
                     >
                 </div>
                 <x-input-error :messages="$errors->get('email')" class="mt-1 text-xs text-error font-medium" />
