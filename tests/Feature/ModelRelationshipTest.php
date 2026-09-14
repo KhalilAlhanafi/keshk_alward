@@ -232,7 +232,7 @@ test('can create order, order_items, and payment_transactions with enums and acc
 
 test('user can assign Spatie roles', function () {
     // Spatie roles setup
-    $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     
     $user = User::create([
         'name' => 'المدير العام',

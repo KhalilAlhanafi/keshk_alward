@@ -15,9 +15,9 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Seed Spatie roles
-    Role::create(['name' => 'admin', 'guard_name' => 'web']);
-    Role::create(['name' => 'store_manager', 'guard_name' => 'web']);
-    Role::create(['name' => 'customer', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'store_manager', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
 });
 
 test('user can register with a valid Syrian phone number and gets customer role', function () {
