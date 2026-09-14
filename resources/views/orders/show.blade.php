@@ -2,20 +2,115 @@
     <div 
         x-data="{
             proofFile: null,
+            proofPreviewUrl: null,
             transactionNumber: '',
             uploading: false,
-            uploadedProof: '{{ $order->payment_proof }}',
-            uploadedTransaction: '{{ $order->transaction_number }}',
-            isZoomed: false,
+            downloading: false,
+            modalImageUrl: null,
+            modalImageTitle: '',
             
+            normalizeDigits(val) {
+                if (!val) return '';
+                const eastern = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+                let res = String(val);
+                for (let i = 0; i < 10; i++) {
+                    res = res.replaceAll(eastern[i], i);
+                }
+                return res.replace(/[^0-9]/g, '').slice(0, 9);
+            },
+
+            onFileSelected(event) {
+                const file = event.target.files ? event.target.files[0] : null;
+                if (!file) {
+                    this.removeSelectedFile();
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { message: 'حجم الصورة كبير جداً، الحد الأقصى 5 ميغابايت', type: 'error' } 
+                    }));
+                    event.target.value = '';
+                    this.removeSelectedFile();
+                    return;
+                }
+                this.proofFile = file;
+                if (this.proofPreviewUrl) {
+                    URL.revokeObjectURL(this.proofPreviewUrl);
+                }
+                this.proofPreviewUrl = URL.createObjectURL(file);
+            },
+
+            removeSelectedFile() {
+                this.proofFile = null;
+                if (this.proofPreviewUrl) {
+                    URL.revokeObjectURL(this.proofPreviewUrl);
+                    this.proofPreviewUrl = null;
+                }
+                const inputs = document.querySelectorAll('input[type=file]');
+                inputs.forEach(i => i.value = '');
+            },
+
+            openImageModal(url, title = 'عرض الصورة') {
+                if (!url) return;
+                this.modalImageUrl = url;
+                this.modalImageTitle = title;
+            },
+
+            closeImageModal() {
+                this.modalImageUrl = null;
+                this.modalImageTitle = '';
+            },
+
+            async downloadImage(url, filename = 'sham_cash_qr.png') {
+                if (this.downloading) return;
+                this.downloading = true;
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Fetch failed');
+                    const blob = await res.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = blobUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(blobUrl);
+                    a.remove();
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { message: 'تم تنزيل الصورة بنجاح!', type: 'success' } 
+                    }));
+                } catch (e) {
+                    // Fallback using direct link with forced attachment download header
+                    const sep = url.includes('?') ? '&' : '?';
+                    const downloadUrl = `${url}${sep}download=1&filename=${encodeURIComponent(filename)}`;
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } finally {
+                    this.downloading = false;
+                }
+            },
+
             async uploadProof() {
+                if (this.transactionNumber) {
+                    this.transactionNumber = this.normalizeDigits(this.transactionNumber);
+                }
+
                 if (!this.proofFile && !this.transactionNumber) {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'يرجى اختيار صورة الإيصال أو إدخال رقم العملية (9 أرقام)', type: 'error' } }));
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { message: 'يرجى اختيار صورة الإيصال أو إدخال رقم العملية (9 أرقام)', type: 'error' } 
+                    }));
                     return;
                 }
 
                 if (this.transactionNumber && this.transactionNumber.length !== 9) {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'رقم العملية يجب أن يتألف من 9 أرقام', type: 'error' } }));
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { message: 'رقم العملية يجب أن يتألف من 9 أرقام', type: 'error' } 
+                    }));
                     return;
                 }
 
@@ -23,26 +118,41 @@
                 const formData = new FormData();
                 if (this.proofFile) formData.append('proof_file', this.proofFile);
                 if (this.transactionNumber) formData.append('transaction_number', this.transactionNumber);
+                formData.append('_token', '{{ csrf_token() }}');
 
                 try {
+                    const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '{{ csrf_token() }}';
                     const response = await fetch('/orders/{{ $order->id }}/payment-proof', {
                         method: 'POST',
                         headers: {
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                            'X-CSRF-TOKEN': csrfToken
                         },
                         body: formData
                     });
 
-                    const data = await response.json();
-                    if (response.ok) {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'تم رفع إثبات الدفع بنجاح!', type: 'success' } }));
-                        setTimeout(() => window.location.reload(), 1500);
+                    const data = await response.json().catch(() => null);
+                    if (response.ok && data) {
+                        window.dispatchEvent(new CustomEvent('toast', { 
+                            detail: { message: data.message || 'تم إرسال إثبات الدفع بنجاح!', type: 'success' } 
+                        }));
+                        setTimeout(() => window.location.reload(), 1200);
                     } else {
-                        const errorMsg = data.error_debug ? data.message + " - " + data.error_debug : data.message || 'تعذر رفع الإثبات';
+                        let errorMsg = 'تعذر إرسال إثبات الدفع، يرجى المحاولة لاحقاً';
+                        if (data?.errors) {
+                            const firstKey = Object.keys(data.errors)[0];
+                            if (firstKey && data.errors[firstKey]?.length) {
+                                errorMsg = data.errors[firstKey][0];
+                            }
+                        } else if (data?.message) {
+                            errorMsg = data.message;
+                        } else if (response.status === 419) {
+                            errorMsg = 'انتهت صلاحية الجلسة، يرجى تحديث الصفحة وإعادة المحاولة';
+                        }
                         window.dispatchEvent(new CustomEvent('toast', { detail: { message: errorMsg, type: 'error' } }));
                     }
                 } catch (e) {
+                    console.error('Upload Proof Exception:', e);
                     window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'حدث خطأ في الاتصال بالسيرفر', type: 'error' } }));
                 } finally {
                     this.uploading = false;
@@ -146,17 +256,33 @@
                                         <label class="block text-xs font-bold text-neutral-600 mb-1">رفع صورة إيصال جديدة</label>
                                         <input 
                                             type="file" 
-                                            @change="proofFile = $event.target.files[0]" 
+                                            id="re-proof-file-input"
+                                            @change="onFileSelected($event)" 
                                             accept="image/*"
-                                            class="w-full bg-surface border border-neutral-200 rounded-2xl p-2 text-xs"
+                                            class="w-full bg-surface border border-neutral-200 rounded-2xl p-2 text-xs cursor-pointer"
                                         >
+                                        <!-- Selected Preview -->
+                                        <template x-if="proofPreviewUrl">
+                                            <div class="mt-2 p-2.5 bg-white rounded-2xl border border-neutral-200 flex items-center justify-between gap-3 shadow-xs">
+                                                <div class="flex items-center gap-2 overflow-hidden cursor-pointer" @click="openImageModal(proofPreviewUrl, 'معاينة الإيصال المختار')">
+                                                    <img :src="proofPreviewUrl" alt="معاينة" class="w-12 h-12 object-cover rounded-xl border border-neutral-100 flex-shrink-0">
+                                                    <div class="text-xs truncate">
+                                                        <span class="font-bold text-neutral-800 block truncate" x-text="proofFile ? proofFile.name : ''"></span>
+                                                        <span class="text-[10px] text-neutral-500 font-body" x-text="proofFile ? (proofFile.size / 1024).toFixed(1) + ' KB' : ''"></span>
+                                                    </div>
+                                                </div>
+                                                <button type="button" @click="removeSelectedFile()" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="إلغاء الملف">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </button>
+                                            </div>
+                                        </template>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-neutral-600 mb-1">أو إدخال رقم العملية الصحيح (9 أرقام)</label>
                                         <input 
                                             type="text" 
                                             x-model="transactionNumber" 
-                                            @input="transactionNumber = transactionNumber.replace(/[^0-9]/g, '').slice(0, 9)"
+                                            @input="transactionNumber = normalizeDigits(transactionNumber)"
                                             maxlength="9"
                                             placeholder="مثال: 123456789"
                                             class="w-full bg-surface border border-neutral-200 rounded-2xl px-4 py-2 text-xs font-body text-start"
@@ -168,10 +294,16 @@
                                     @click="uploadProof()" 
                                     :disabled="uploading"
                                     type="button" 
-                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50 relative"
+                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50 relative flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <span :class="{'opacity-0': uploading}">إعادة إرسال الإثبات</span>
-                                    <span x-cloak x-show="uploading" class="absolute inset-0 flex items-center justify-center">جاري الإرسال...</span>
+                                    <span x-cloak x-show="uploading" class="absolute inset-0 flex items-center justify-center gap-1.5">
+                                        <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span>جاري الإرسال...</span>
+                                    </span>
                                 </button>
                             </div>
                         </div>
@@ -201,18 +333,28 @@
                             <!-- QR Code Image & Download -->
                             @php $qrImage = \App\Models\Setting::get('sham_cash_qr_image'); @endphp
                             @if($qrImage)
-                                <div class="flex flex-col items-center gap-2">
-                                    <button type="button" @click="isZoomed = true" class="block cursor-pointer hover:opacity-90 transition-opacity" title="فتح الصورة">
+                                <div class="flex flex-col items-center gap-2.5">
+                                    <button 
+                                        type="button" 
+                                        @click="openImageModal('{{ route('storage.serve', ['path' => $qrImage]) }}', 'رمز الاستجابة السريعة (QR Code) — شام كاش')" 
+                                        class="block cursor-pointer hover:opacity-95 hover:scale-[1.02] transition-all group relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl" 
+                                        title="انقر لفتح الصورة بحجم كبير في نفس الصفحة"
+                                    >
                                         <img src="{{ route('storage.serve', ['path' => $qrImage]) }}" alt="QR Code" class="w-48 h-48 object-contain rounded-2xl border border-neutral-200 shadow-sm bg-white p-2">
+                                        <div class="absolute inset-0 bg-primary/30 opacity-0 group-hover:opacity-100 rounded-2xl flex flex-col items-center justify-center transition-opacity text-white text-xs font-bold gap-1 backdrop-blur-[1px]">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"></path></svg>
+                                            <span>انقر لفتح الصورة</span>
+                                        </div>
                                     </button>
-                                    <a 
-                                        href="{{ route('storage.serve', ['path' => $qrImage]) }}"
-                                        download="sham_cash_qr.png"
-                                        class="flex items-center gap-2 text-xs font-bold text-white bg-primary hover:bg-primary-600 px-4 py-2 rounded-xl transition-colors shadow-sm"
+                                    <button 
+                                        type="button"
+                                        @click="downloadImage('{{ route('storage.serve', ['path' => $qrImage]) }}', 'sham_cash_qr.png')"
+                                        :disabled="downloading"
+                                        class="flex items-center gap-2 text-xs font-bold text-white bg-primary hover:bg-primary-600 px-4 py-2 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                        <span>تنزيل الصورة</span>
-                                    </a>
+                                        <span x-text="downloading ? 'جاري التنزيل...' : 'تنزيل الصورة'">تنزيل الصورة</span>
+                                    </button>
                                 </div>
                             @endif
                         </div>
@@ -226,17 +368,24 @@
                                     <p class="text-amber-800">
                                         الإيصال قيد المراجعة والتدقيق حالياً من قبل الإدارة. ستتغير حالة الطلب فور مطابقة العملية.
                                     </p>
-                                    <div class="mt-2 flex gap-4">
+                                    <div class="mt-2 flex flex-wrap gap-4">
                                         @if($order->payment_proof)
-                                            <div class="bg-white/60 p-2 rounded-xl border border-amber-200">
-                                                <span class="font-bold block mb-1">صورة الإيصال:</span>
-                                                <a href="{{ route('storage.serve', ['path' => $order->payment_proof]) }}" target="_blank" class="text-amber-700 underline text-[10px]">عرض الصورة</a>
+                                            <div class="bg-white/70 p-2.5 rounded-xl border border-amber-200 flex flex-col gap-1">
+                                                <span class="font-bold text-xs text-amber-900 block">صورة الإيصال:</span>
+                                                <button 
+                                                    type="button" 
+                                                    @click="openImageModal('{{ route('storage.serve', ['path' => $order->payment_proof]) }}', 'إيصال دفع شام كاش — طلب {{ $order->order_number }}')" 
+                                                    class="text-primary hover:text-primary-700 underline text-xs font-bold flex items-center gap-1.5 cursor-pointer text-start"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                    <span>فتح الصورة في نفس الصفحة</span>
+                                                </button>
                                             </div>
                                         @endif
                                         @if($order->transaction_number)
-                                            <div class="bg-white/60 p-2 rounded-xl border border-amber-200">
-                                                <span class="font-bold block mb-1">رقم العملية:</span>
-                                                <span class="text-amber-700 text-[10px] font-body">{{ $order->transaction_number }}</span>
+                                            <div class="bg-white/70 p-2.5 rounded-xl border border-amber-200">
+                                                <span class="font-bold text-xs text-amber-900 block mb-1">رقم العملية:</span>
+                                                <span class="text-amber-700 text-xs font-bold font-body">{{ $order->transaction_number }}</span>
                                             </div>
                                         @endif
                                     </div>
@@ -252,17 +401,33 @@
                                         <label class="block text-xs font-bold text-neutral-600 mb-1">رفع صورة الإيصال</label>
                                         <input 
                                             type="file" 
-                                            @change="proofFile = $event.target.files[0]"
+                                            id="proof-file-input"
+                                            @change="onFileSelected($event)"
                                             accept="image/*"
-                                            class="w-full bg-surface border border-neutral-200 rounded-2xl p-2 text-xs"
+                                            class="w-full bg-surface border border-neutral-200 rounded-2xl p-2 text-xs cursor-pointer"
                                         >
+                                        <!-- Selected Preview -->
+                                        <template x-if="proofPreviewUrl">
+                                            <div class="mt-2 p-2.5 bg-white rounded-2xl border border-neutral-200 flex items-center justify-between gap-3 shadow-xs">
+                                                <div class="flex items-center gap-2 overflow-hidden cursor-pointer" @click="openImageModal(proofPreviewUrl, 'معاينة صورة الإيصال المختار')">
+                                                    <img :src="proofPreviewUrl" alt="معاينة" class="w-12 h-12 object-cover rounded-xl border border-neutral-100 flex-shrink-0">
+                                                    <div class="text-xs truncate">
+                                                        <span class="font-bold text-neutral-800 block truncate" x-text="proofFile ? proofFile.name : ''"></span>
+                                                        <span class="text-[10px] text-neutral-500 font-body" x-text="proofFile ? (proofFile.size / 1024).toFixed(1) + ' KB' : ''"></span>
+                                                    </div>
+                                                </div>
+                                                <button type="button" @click="removeSelectedFile()" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="إلغاء الملف">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </button>
+                                            </div>
+                                        </template>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-neutral-600 mb-1">أو إدخال رقم العملية (9 أرقام)</label>
                                         <input 
                                             type="text" 
                                             x-model="transactionNumber" 
-                                            @input="transactionNumber = transactionNumber.replace(/[^0-9]/g, '').slice(0, 9)"
+                                            @input="transactionNumber = normalizeDigits(transactionNumber)"
                                             maxlength="9"
                                             placeholder="مثال: 123456789"
                                             class="w-full bg-surface border border-neutral-200 rounded-2xl px-4 py-2 text-xs font-body text-start"
@@ -274,10 +439,16 @@
                                     @click="uploadProof()" 
                                     :disabled="uploading"
                                     type="button" 
-                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50 relative"
+                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50 relative flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <span :class="{'opacity-0': uploading}">إرسال إثبات الدفع</span>
-                                    <span x-cloak x-show="uploading" class="absolute inset-0 flex items-center justify-center">جاري الرفع...</span>
+                                    <span x-cloak x-show="uploading" class="absolute inset-0 flex items-center justify-center gap-1.5">
+                                        <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span>جاري الرفع...</span>
+                                    </span>
                                 </button>
                             </div>
                         @endif
@@ -401,44 +572,81 @@
             @endif
         </div>
 
-        <!-- Lightbox Modal -->
-        <div 
-            x-show="isZoomed" 
-            x-cloak
-            @keydown.escape.window="isZoomed = false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6"
-            role="dialog"
-        >
-            <!-- Backdrop -->
+        <!-- Universal Lightbox Modal (Teleported to body) -->
+        <template x-teleport="body">
             <div 
-                x-show="isZoomed"
-                x-transition.opacity
-                @click="isZoomed = false"
-                class="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm"
-            ></div>
-
-            <!-- Modal Content -->
-            <div 
-                x-show="isZoomed"
-                x-transition.scale
-                class="relative z-10 max-w-lg w-full flex flex-col items-center gap-4"
-                @click.stop
+                x-show="modalImageUrl" 
+                x-cloak
+                @keydown.escape.window="closeImageModal()"
+                class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+                style="display: none;"
+                role="dialog"
+                aria-modal="true"
             >
-                <button 
-                    @click="isZoomed = false"
-                    type="button" 
-                    class="self-end p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                <!-- Backdrop -->
+                <div 
+                    x-show="modalImageUrl"
+                    x-transition:enter="ease-out duration-250"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    @click="closeImageModal()"
+                    class="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm"
+                ></div>
+
+                <!-- Modal Content -->
+                <div 
+                    x-show="modalImageUrl"
+                    x-transition:enter="ease-out duration-250"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                    class="relative z-10 max-w-2xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-neutral-100 p-4 sm:p-6 space-y-4 text-start font-body-ar"
+                    @click.stop
                 >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                @php $qrImageModal = \App\Models\Setting::get('sham_cash_qr_image'); @endphp
-                @if($qrImageModal)
-                    <img src="{{ route('storage.serve', ['path' => $qrImageModal]) }}" alt="QR Code" class="w-full h-auto max-h-[80vh] object-contain rounded-3xl shadow-2xl bg-white p-4">
-                @endif
+                    <div class="flex items-center justify-between pb-3 border-b border-neutral-100">
+                        <h4 class="font-bold text-primary text-sm sm:text-base font-headline-ar" x-text="modalImageTitle || 'عرض الصورة'"></h4>
+                        <button 
+                            @click="closeImageModal()"
+                            type="button" 
+                            class="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors cursor-pointer"
+                            title="إغلاق"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-center bg-neutral-50 rounded-2xl p-2 max-h-[72vh] overflow-hidden">
+                        <img :src="modalImageUrl" :alt="modalImageTitle" class="max-h-[68vh] w-auto max-w-full object-contain rounded-xl shadow-inner">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button 
+                            type="button" 
+                            @click="downloadImage(modalImageUrl, 'sham_cash_image.png')"
+                            :disabled="downloading"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span x-text="downloading ? 'جاري التنزيل...' : 'تنزيل الصورة'">تنزيل الصورة</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="closeImageModal()"
+                            class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                        >
+                            إغلاق
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
+        </template>
 
     </div>
 </x-app-layout>

@@ -26,6 +26,14 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
     if (!file_exists($fullPath)) {
         abort(404);
     }
+
+    if ($request->boolean('download') || $request->has('download')) {
+        $filename = $request->query('filename') ?: basename($fullPath);
+        return response()->download($fullPath, $filename, [
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ]);
+    }
+
     return response()->file($fullPath, [
         'Cache-Control' => 'public, max-age=31536000'
     ]);

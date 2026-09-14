@@ -90,28 +90,47 @@ class OrderController extends Controller
         // Policy: user can only upload proof for their own orders
         abort_if(auth()->id() !== $order->user_id, 403);
 
-        // Only allow for ShamCash orders awaiting verification
-        if ($order->payment_method->value !== 'sham_cash' || 
-            $order->payment_status->value !== 'awaiting_verification') {
+        $paymentMethodValue = $order->payment_method instanceof \BackedEnum ? $order->payment_method->value : (string) $order->payment_method;
+        $paymentStatusValue = $order->payment_status instanceof \BackedEnum ? $order->payment_status->value : (string) $order->payment_status;
+
+        // Only allow for ShamCash orders
+        if ($paymentMethodValue !== 'sham_cash') {
             return response()->json([
-                'message' => 'لا يمكن رفع إثبات الدفع لهذا الطلب.'
+                'message' => 'لا يمكن رفع إثبات الدفع، طريقة دفع الطلب ليست شام كاش.'
             ], 422);
+        }
+
+        // Cannot upload proof if already verified or paid
+        if (in_array($paymentStatusValue, ['verified', 'paid'])) {
+            return response()->json([
+                'message' => 'تم تأكيد دفع هذا الطلب مسبقاً.'
+            ], 422);
+        }
+
+        // Normalize transaction number (convert Arabic-Indic numerals and trim)
+        if ($request->has('transaction_number')) {
+            $raw = (string) $request->input('transaction_number');
+            $eastern = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+            $western = ['0','1','2','3','4','5','6','7','8','9'];
+            $clean = preg_replace('/[^0-9]/', '', str_replace($eastern, $western, $raw));
+            $request->merge(['transaction_number' => $clean !== '' ? $clean : null]);
         }
 
         // Validate request
         $validated = $request->validate([
-            'proof_file' => 'nullable|image|max:5120', // Max 5MB image
+            'proof_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120', // Max 5MB image
             'transaction_number' => ['nullable', 'string', 'digits:9'],
         ], [
             'transaction_number.digits' => 'رقم عملية شام كاش يجب أن يتألف من 9 أرقام.',
             'proof_file.image' => 'يجب أن يكون الملف المرفوع صورة صالحة.',
+            'proof_file.mimes' => 'يجب أن تكون الصورة بصيغة صالحة (jpg, png, webp).',
             'proof_file.max' => 'حجم الصورة يجب ألا يتجاوز 5 ميغابايت.',
         ]);
 
         // Require at least one field
-        if (!$request->hasFile('proof_file') && !$request->filled('transaction_number')) {
+        if (!$request->hasFile('proof_file') && empty($request->input('transaction_number'))) {
             return response()->json([
-                'message' => 'يجب رفع صورة الإيصال أو إدخال رقم العملية (9 أرقام).'
+                'message' => 'يرجى اختيار صورة الإيصال أو إدخال رقم العملية (9 أرقام).'
             ], 422);
         }
 
@@ -121,14 +140,29 @@ class OrderController extends Controller
                 $path = $request->file('proof_file')->store('payment-proofs', 'public');
                 $order->payment_proof = $path;
             }
-            if ($request->filled('transaction_number')) {
+            if (!empty($request->input('transaction_number'))) {
                 $order->transaction_number = $request->input('transaction_number');
+            }
+
+            // Always update status to awaiting verification and clear previous rejection
+            $order->payment_status = \App\Enums\PaymentStatus::AWAITING_VERIFICATION;
+            $order->rejection_reason = null;
+
+            if ($order->status === \App\Enums\OrderStatus::CANCELLED) {
+                $order->status = \App\Enums\OrderStatus::PENDING;
             }
 
             $order->save();
 
+            // Send Telegram Notification
+            try {
+                app(\App\Services\TelegramNotifierService::class)->sendPaymentProofUploadedAlert($order);
+            } catch (\Throwable $te) {
+                \Log::warning('Failed sending telegram proof alert: ' . $te->getMessage());
+            }
+
             return response()->json([
-                'message' => 'تم رفع إثبات الدفع بنجاح. سيتم مراجعته قريباً.',
+                'message' => 'تم استلام إثبات الدفع بنجاح! سيتم مراجعته وتأكيد الطلب قريباً.',
                 'payment_proof' => $order->payment_proof,
                 'transaction_number' => $order->transaction_number,
             ]);

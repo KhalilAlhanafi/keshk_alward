@@ -84,6 +84,47 @@ class TelegramNotifierService
     }
 
     /**
+     * Send an alert when a customer uploads proof of payment.
+     */
+    public function sendPaymentProofUploadedAlert(Order $order): bool
+    {
+        if (empty($this->chatId) || empty(config('services.telegram.bot_token'))) {
+            return false;
+        }
+
+        try {
+            $lines = [
+                '🧾 <b>إشعار إثبات دفع — كشك الورد</b>',
+                '',
+                "قام العميل برفع إثبات دفع للطلب رقم: <b>{$order->order_number}</b>",
+                "المستلم: <b>{$order->recipient_name}</b>",
+                "المبلغ المطلوب: <b>" . format_money($order->total) . "</b>",
+            ];
+
+            if ($order->transaction_number) {
+                $lines[] = "رقم العملية: <code>{$order->transaction_number}</code>";
+            }
+            if ($order->payment_proof) {
+                $lines[] = "صورة الإيصال: تم إرفاقها بنجاح";
+            }
+
+            $response = Http::timeout(10)->post("{$this->apiBase}/sendMessage", [
+                'chat_id'    => $this->chatId,
+                'text'       => implode("\n", $lines),
+                'parse_mode' => 'HTML',
+            ]);
+
+            return $response->successful();
+        } catch (\Throwable $e) {
+            Log::error('TelegramNotifier: Exception while sending proof alert.', [
+                'message' => $e->getMessage(),
+                'order'   => $order->order_number,
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Build the Telegram message text for a new order.
      * Follows Global Conventions: Western numerals + ل.س currency.
      */
