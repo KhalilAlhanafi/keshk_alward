@@ -168,10 +168,10 @@
                                     @click="uploadProof()" 
                                     :disabled="uploading"
                                     type="button" 
-                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50"
+                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50 relative"
                                 >
-                                    <span x-show="!uploading">إعادة إرسال الإثبات</span>
-                                    <span x-show="uploading">جاري الإرسال...</span>
+                                    <span :class="{'opacity-0': uploading}">إعادة إرسال الإثبات</span>
+                                    <span x-cloak x-show="uploading" class="absolute inset-0 flex items-center justify-center">جاري الإرسال...</span>
                                 </button>
                             </div>
                         </div>
@@ -274,10 +274,10 @@
                                     @click="uploadProof()" 
                                     :disabled="uploading"
                                     type="button" 
-                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50"
-                                    x-text="uploading ? 'جاري الرفع...' : 'إرسال إثبات الدفع'"
+                                    class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50 relative"
                                 >
-                                    إرسال إثبات الدفع
+                                    <span :class="{'opacity-0': uploading}">إرسال إثبات الدفع</span>
+                                    <span x-cloak x-show="uploading" class="absolute inset-0 flex items-center justify-center">جاري الرفع...</span>
                                 </button>
                             </div>
                         @endif
