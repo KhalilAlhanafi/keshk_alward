@@ -275,9 +275,9 @@
                                     :disabled="uploading"
                                     type="button" 
                                     class="bg-primary hover:bg-primary-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-md transition-colors disabled:opacity-50"
+                                    x-text="uploading ? 'جاري الرفع...' : 'إرسال إثبات الدفع'"
                                 >
-                                    <span x-show="!uploading">إرسال إثبات الدفع</span>
-                                    <span x-show="uploading">جاري الرفع...</span>
+                                    إرسال إثبات الدفع
                                 </button>
                             </div>
                         @endif
