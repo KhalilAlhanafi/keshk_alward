@@ -145,7 +145,7 @@
                                 errorMsg = data.errors[firstKey][0];
                             }
                         } else if (data?.message) {
-                            errorMsg = data.message;
+                            errorMsg = data.error_debug ? data.message + ' - ' + data.error_debug : data.message;
                         } else if (response.status === 419) {
                             errorMsg = 'انتهت صلاحية الجلسة، يرجى تحديث الصفحة وإعادة المحاولة';
                         }
