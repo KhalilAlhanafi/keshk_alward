@@ -39,6 +39,12 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
     ]);
 })->name('storage.serve');
 
+// Temporary route to fix Wasmer DB migrations
+Route::get('/wasmer-migrate', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+    return 'Migrations ran successfully! Output: <pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+});
+
 // Phase 1 Test Route & Styleguide
 Route::get('/phase1-test', function () {
     return view('layouts.test');
