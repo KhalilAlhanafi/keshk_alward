@@ -26,6 +26,14 @@ COPY . .
 # Install PHP dependencies
 RUN composer install --optimize-autoloader
 
+# Increase PHP Upload Limits for Wasmer / Docker
+RUN echo "upload_max_filesize = 10M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 12M" >> /usr/local/etc/php/conf.d/uploads.ini
+
+# Ensure storage directories exist and are writable
+RUN mkdir -p storage/app/public/payment-proofs \
+    && chmod -R 777 storage bootstrap/cache
+
 # Install Node dependencies and build Vite assets
 RUN npm install && npm run build
 
