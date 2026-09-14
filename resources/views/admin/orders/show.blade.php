@@ -5,6 +5,22 @@
             updatingStatus: false,
             verifyingPayment: false,
             rejectionReason: '',
+            
+            // Image Modal State
+            modalImageUrl: null,
+            modalImageTitle: '',
+            downloading: false,
+
+            openImageModal(url, title = '') {
+                this.modalImageUrl = url;
+                this.modalImageTitle = title;
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            },
+            closeImageModal() {
+                this.modalImageUrl = null;
+                this.modalImageTitle = '';
+                document.body.style.overflow = ''; // Restore scrolling
+            },
 
             async updateOrderStatus() {
                 this.updatingStatus = true;
@@ -174,15 +190,15 @@
                                 @if($proof)
                                     @if($isImage && $proofUrl)
                                         <div class="space-y-2">
-                                            <a href="{{ $proofUrl }}" target="_blank" title="انقر لعرض الصورة بالحجم الكامل" class="group relative block w-56 h-56 rounded-2xl overflow-hidden border-2 border-primary/20 bg-surface shadow-md hover:border-primary transition-all">
+                                            <button type="button" @click="openImageModal('{{ $proofUrl }}', 'إيصال دفع شام كاش — طلب {{ $order->order_number }}')" title="انقر لعرض الصورة بالحجم الكامل" class="group relative block w-56 h-56 rounded-2xl overflow-hidden border-2 border-primary/20 bg-surface shadow-md hover:border-primary transition-all cursor-pointer">
                                                 <img src="{{ $proofUrl }}" alt="إيصال شام كاش" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                                 <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1">
                                                     <span>🔍 تكبير الصورة</span>
                                                 </div>
-                                            </a>
-                                            <a href="{{ $proofUrl }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-primary font-bold hover:underline">
+                                            </button>
+                                            <button type="button" @click="openImageModal('{{ $proofUrl }}', 'إيصال دفع شام كاش — طلب {{ $order->order_number }}')" class="inline-flex items-center gap-1.5 text-xs text-primary font-bold hover:underline cursor-pointer">
                                                 <span>عرض الصورة بالحجم الكامل ↗</span>
-                                            </a>
+                                            </button>
                                         </div>
                                     @else
                                         <div class="p-3 bg-surface border border-neutral-200 rounded-xl text-sm font-bold font-body text-primary select-all">
@@ -278,6 +294,43 @@
                 </div>
             </div>
         </div>
+
+        <!-- Fullscreen Image Modal Template -->
+        <template x-if="modalImageUrl">
+            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" x-cloak>
+                <div class="absolute inset-0 bg-neutral-900/80 backdrop-blur-sm transition-opacity" @click="closeImageModal()"></div>
+                
+                <div class="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-4 flex flex-col gap-3 transform transition-all scale-100 opacity-100">
+                    <div class="flex items-center justify-between pb-3 border-b border-neutral-100">
+                        <h4 class="font-bold text-primary text-sm sm:text-base font-headline-ar" x-text="modalImageTitle || 'عرض الصورة'"></h4>
+                        <button 
+                            @click="closeImageModal()"
+                            type="button" 
+                            class="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors cursor-pointer"
+                            title="إغلاق"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-center bg-neutral-50 rounded-2xl p-2 max-h-[72vh] overflow-hidden">
+                        <img :src="modalImageUrl" :alt="modalImageTitle" class="max-h-[68vh] w-auto max-w-full object-contain rounded-xl shadow-inner">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button 
+                            type="button" 
+                            @click="closeImageModal()"
+                            class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                        >
+                            إغلاق
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
 
     </div>
 </x-admin-layout>
