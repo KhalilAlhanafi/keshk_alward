@@ -41,8 +41,12 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
 
 // Temporary route to fix Wasmer DB migrations
 Route::get('/wasmer-migrate', function () {
-    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-    return 'Migrations ran successfully! Output: <pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    try {
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders ADD COLUMN transaction_number VARCHAR(255) NULL;");
+        return 'Column added successfully!';
+    } catch (\Exception $e) {
+        return 'Error (might already exist): ' . $e->getMessage();
+    }
 });
 
 // Phase 1 Test Route & Styleguide
