@@ -44,8 +44,11 @@ class OrderController extends Controller
 
         try {
             $order = $this->orderService->placeOrder($cart, $request->validated());
-        } catch (\RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            // General catch-all for any DB errors or unknown exceptions to prevent 500 HTML response
+            \Log::error('Order placement exception in controller: ' . $e->getMessage());
+            $userMsg = $e instanceof \RuntimeException ? $e->getMessage() : 'عذراً، حدث خطأ أثناء معالجة الطلب. يرجى المحاولة لاحقاً.';
+            return response()->json(['message' => $userMsg, 'error_debug' => $e->getMessage()], 422);
         }
 
         $shamCashWallet = null;
