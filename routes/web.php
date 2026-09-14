@@ -43,9 +43,15 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
 Route::get('/wasmer-migrate', function () {
     try {
         \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders ADD COLUMN transaction_number VARCHAR(255) NULL;");
-        return 'Column added successfully!';
     } catch (\Exception $e) {
-        return 'Error (might already exist): ' . $e->getMessage();
+        // Ignore if column already exists
+    }
+    
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return 'Migrations ran successfully! Output: <pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    } catch (\Exception $e) {
+        return 'Error during migrate: ' . $e->getMessage();
     }
 });
 
