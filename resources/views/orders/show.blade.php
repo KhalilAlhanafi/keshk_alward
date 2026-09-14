@@ -115,20 +115,29 @@
                 }
 
                 this.uploading = true;
-                const formData = new FormData();
-                if (this.proofFile) formData.append('proof_file', this.proofFile);
-                if (this.transactionNumber) formData.append('transaction_number', this.transactionNumber);
-                formData.append('_token', '{{ csrf_token() }}');
+                
+                let base64Image = null;
+                if (this.proofFile) {
+                    base64Image = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(this.proofFile);
+                    });
+                }
 
                 try {
                     const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '{{ csrf_token() }}';
                     const response = await fetch('/orders/{{ $order->id }}/payment-proof', {
                         method: 'POST',
                         headers: {
+                            'Content-Type': 'application/json',
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': csrfToken
                         },
-                        body: formData
+                        body: JSON.stringify({
+                            proof_file_base64: base64Image,
+                            transaction_number: this.transactionNumber
+                        })
                     });
 
                     const data = await response.json().catch(() => null);

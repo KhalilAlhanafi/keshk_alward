@@ -118,17 +118,13 @@ class OrderController extends Controller
 
         // Validate request
         $validated = $request->validate([
-            'proof_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120', // Max 5MB image
             'transaction_number' => ['nullable', 'string', 'digits:9'],
         ], [
             'transaction_number.digits' => 'رقم عملية شام كاش يجب أن يتألف من 9 أرقام.',
-            'proof_file.image' => 'يجب أن يكون الملف المرفوع صورة صالحة.',
-            'proof_file.mimes' => 'يجب أن تكون الصورة بصيغة صالحة (jpg, png, webp).',
-            'proof_file.max' => 'حجم الصورة يجب ألا يتجاوز 5 ميغابايت.',
         ]);
 
         // Require at least one field
-        if (!$request->hasFile('proof_file') && empty($request->input('transaction_number'))) {
+        if (empty($request->input('proof_file_base64')) && empty($request->input('transaction_number'))) {
             return response()->json([
                 'message' => 'يرجى اختيار صورة الإيصال أو إدخال رقم العملية (9 أرقام).'
             ], 422);
@@ -136,9 +132,31 @@ class OrderController extends Controller
 
         try {
             // Handle file upload
-            if ($request->hasFile('proof_file')) {
-                $path = $request->file('proof_file')->store('payment-proofs', 'public');
-                $order->payment_proof = $path;
+            if ($request->input('proof_file_base64')) {
+                $base64 = $request->input('proof_file_base64');
+                if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
+                    $base64 = substr($base64, strpos($base64, ',') + 1);
+                    $type = strtolower($type[1]); 
+                    $base64 = str_replace(' ', '+', $base64);
+                    $image = base64_decode($base64);
+                    
+                    if ($image === false) {
+                        throw new \Exception('فشل في فك تشفير الصورة');
+                    }
+                    
+                    $filename = 'payment-proofs/' . uniqid() . '.' . $type;
+                    $dir = storage_path('app/public/payment-proofs');
+                    
+                    if (!is_dir($dir)) {
+                        @mkdir($dir, 0777, true);
+                    }
+                    
+                    if (file_put_contents(storage_path('app/public/' . $filename), $image) === false) {
+                         throw new \Exception('غير قادر على حفظ الصورة في مجلد: ' . $dir);
+                    }
+                    
+                    $order->payment_proof = $filename;
+                }
             }
             if (!empty($request->input('transaction_number'))) {
                 $order->transaction_number = $request->input('transaction_number');

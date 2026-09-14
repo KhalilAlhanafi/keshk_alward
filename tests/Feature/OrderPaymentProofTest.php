@@ -58,11 +58,12 @@ class OrderPaymentProofTest extends TestCase
             'payment_status' => PaymentStatus::AWAITING_VERIFICATION,
         ]);
 
-        $file = UploadedFile::fake()->image('receipt.jpg');
+        // A 1x1 transparent PNG base64 string
+        $base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
         $response = $this->actingAs($user)
             ->postJson(route('orders.payment-proof', $order->id), [
-                'proof_file' => $file,
+                'proof_file_base64' => $base64Image,
                 'transaction_number' => '123456789',
             ]);
 
