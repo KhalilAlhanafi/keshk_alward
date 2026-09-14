@@ -42,9 +42,9 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
 // Temporary route to fix Wasmer DB migrations
 Route::get('/wasmer-migrate', function () {
     try {
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders ADD COLUMN transaction_number VARCHAR(255) NULL;");
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders DROP COLUMN transaction_number;");
     } catch (\Exception $e) {
-        // Ignore if column already exists
+        // Ignore if column does not exist
     }
     
     try {
