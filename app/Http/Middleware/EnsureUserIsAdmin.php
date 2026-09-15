@@ -21,9 +21,7 @@ class EnsureUserIsAdmin
             return redirect()->route('admin.login');
         }
 
-        // Check both database column role and Spatie HasRoles
-        $isAdmin = in_array($user->role, ['admin', 'store_manager']) || 
-                   ($user->hasRole('admin') || $user->hasRole('store_manager'));
+        $isAdmin = $user->isManagerOrAdmin();
 
         if (! $isAdmin) {
             abort(403, 'غير مصرح بالوصول إلى لوحة الإدارة.');

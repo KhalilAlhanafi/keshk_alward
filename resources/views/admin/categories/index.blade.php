@@ -50,7 +50,9 @@
                     is_active: Boolean(cat.is_active),
                     imageFile: null,
                     imagePreview: null,
-                    existingImageUrl: cat.image_url || (cat.image_path ? '/storage/' + cat.image_path : null),
+                    // cat.image_url is now appended via $appends in Category model,
+                    // and uses the storage.serve route that works on Wasmer (no symlink needed).
+                    existingImageUrl: cat.image_url || null,
                 };
                 this.editModalOpen = true;
             },

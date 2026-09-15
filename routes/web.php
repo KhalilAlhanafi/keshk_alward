@@ -18,12 +18,17 @@ use Illuminate\Support\Facades\DB;
 
 // Serve Storage Files Fallback (For Wasmer Edge environments where symlinks are restricted)
 Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
-    $path = ltrim($request->query('path'), '/');
+    $path = ltrim((string) $request->query('path'), "/\\");
     if (empty($path)) {
         abort(404);
     }
-    $fullPath = storage_path('app/public/' . $path);
-    if (!file_exists($fullPath)) {
+
+    $baseDir = realpath(storage_path('app/public'));
+    $targetPath = storage_path('app/public/' . $path);
+    $fullPath = realpath($targetPath);
+
+    // Prevent directory traversal (Path Traversal Protection)
+    if (! $fullPath || ! $baseDir || ! str_starts_with($fullPath, $baseDir) || ! is_file($fullPath)) {
         abort(404);
     }
 
@@ -39,37 +44,20 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
     ]);
 })->name('storage.serve');
 
-// Temporary route to fix Wasmer DB migrations
-Route::get('/wasmer-migrate', function () {
-    try {
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders DROP COLUMN transaction_number;");
-    } catch (\Exception $e) {}
-    try {
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders MODIFY payment_proof LONGTEXT NULL;");
-    } catch (\Exception $e) {}
-    
-    
-    try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        return 'Migrations ran successfully! Output: <pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
-    } catch (\Exception $e) {
-        return 'Error during migrate: ' . $e->getMessage();
-    }
-});
+// Dev-only routes — only accessible in local/testing environments
+if (! app()->isProduction()) {
+    Route::get('/phase1-test', function () {
+        return view('layouts.test');
+    })->name('phase1.test');
 
-// Phase 1 Test Route & Styleguide
-Route::get('/phase1-test', function () {
-    return view('layouts.test');
-})->name('phase1.test');
+    Route::get('/dev/styleguide', function () {
+        return view('components.dev');
+    })->name('dev.styleguide');
 
-Route::get('/dev/styleguide', function () {
-    return view('components.dev');
-})->name('dev.styleguide');
-
-// Phase 2 Components Demo Route
-Route::get('/phase2-components', function () {
-    return view('components.dev');
-})->name('phase2.components');
+    Route::get('/phase2-components', function () {
+        return view('components.dev');
+    })->name('phase2.components');
+}
 
 Route::get('/', HomepageController::class)->name('home');
 
@@ -211,8 +199,3 @@ Route::get('/health', function () {
     ]);
 })->name('health');
 
-Route::get('/migrate-db', function () {
-    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-    return 'Database migrated and seeded successfully! You can now visit the homepage.';
-});

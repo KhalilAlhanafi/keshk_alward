@@ -20,9 +20,14 @@ class Setting extends Model
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        $settings = Cache::remember(CacheService::KEY_SETTINGS_ALL, CacheService::TTL_SETTINGS, function () {
-            return static::all()->keyBy('key');
-        });
+        try {
+            $settings = Cache::remember(CacheService::KEY_SETTINGS_ALL, CacheService::TTL_SETTINGS, function () {
+                return static::all()->keyBy('key');
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Setting::get cache failed, falling back to DB.', ['error' => $e->getMessage()]);
+            $settings = static::all()->keyBy('key');
+        }
 
         return $settings->has($key) ? $settings[$key]->value : $default;
     }

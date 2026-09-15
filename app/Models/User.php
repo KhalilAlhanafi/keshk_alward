@@ -65,4 +65,21 @@ class User extends Authenticatable
     {
         return $this->hasMany(Wishlist::class);
     }
+
+    /**
+     * Check if user is an administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin' || (method_exists($this, 'hasRole') && $this->hasRole('admin'));
+    }
+
+    /**
+     * Check if user is an administrator or store manager.
+     */
+    public function isManagerOrAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'store_manager']) || 
+               (method_exists($this, 'hasRole') && ($this->hasRole('admin') || $this->hasRole('store_manager')));
+    }
 }

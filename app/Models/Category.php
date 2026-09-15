@@ -23,6 +23,15 @@ class Category extends Model
         'sort_order' => 'integer',
     ];
 
+    /**
+     * Append computed attributes to JSON/array serialization.
+     * This ensures image_url is included in json_encode($cat) in Blade views.
+     */
+    protected $appends = [
+        'name',
+        'image_url',
+    ];
+
     protected static function booted(): void
     {
         $flush = fn () => CacheService::flushCategoryCaches();

@@ -7,6 +7,7 @@ use App\Services\CacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class CatalogController extends Controller
 {
@@ -28,12 +29,20 @@ class CatalogController extends Controller
         ];
 
         // Active parent categories for filter sidebar
-        $categories = Cache::remember(CacheService::KEY_CATEGORIES_ACTIVE, CacheService::TTL_CATEGORIES, function () {
-            return \App\Models\Category::whereNull('parent_id')
+        try {
+            $categories = Cache::remember(CacheService::KEY_CATEGORIES_ACTIVE, CacheService::TTL_CATEGORIES, function () {
+                return \App\Models\Category::whereNull('parent_id')
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get();
+            });
+        } catch (\Throwable $e) {
+            Log::warning('CatalogController: Cache failed for categories, falling back to DB.', ['error' => $e->getMessage()]);
+            $categories = \App\Models\Category::whereNull('parent_id')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->get();
-        });
+        }
 
         // Query logic
         $query = Product::with(['category', 'sizes'])->where('is_active', true);
@@ -100,7 +109,7 @@ class CatalogController extends Controller
             ]);
         }
 
-        $allProducts = Product::with(['category', 'sizes'])->where('is_active', true)->orderBy('created_at', 'desc')->get();
+        $allProducts = Product::with(['category', 'sizes'])->where('is_active', true)->orderBy('created_at', 'desc')->limit(48)->get();
 
         return view('catalog.index', compact('products', 'categories', 'params', 'allProducts'));
     }

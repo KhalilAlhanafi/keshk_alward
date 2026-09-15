@@ -120,7 +120,32 @@
                 if (this.proofFile) {
                     base64Image = await new Promise((resolve) => {
                         const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
+                        reader.onload = (e) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                const maxDim = 1400;
+                                if (width > maxDim || height > maxDim) {
+                                    if (width > height) {
+                                        height = Math.round((height * maxDim) / width);
+                                        width = maxDim;
+                                    } else {
+                                        width = Math.round((width * maxDim) / height);
+                                        height = maxDim;
+                                    }
+                                }
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                resolve(canvas.toDataURL('image/jpeg', 0.85));
+                            };
+                            img.onerror = () => resolve(e.target.result);
+                            img.src = e.target.result;
+                        };
+                        reader.onerror = () => resolve(null);
                         reader.readAsDataURL(this.proofFile);
                     });
                 }

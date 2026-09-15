@@ -12,7 +12,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'store_manager']);
+        return $user->isManagerOrAdmin();
     }
 
     /**
@@ -21,13 +21,13 @@ class UserPolicy
     public function view(User $user, User $model): bool
     {
         // Admins can view any user
-        if ($user->hasRole('admin')) {
+        if ($user->isAdmin()) {
             return true;
         }
 
         // Store managers can view customers but not other managers
-        if ($user->hasRole('store_manager')) {
-            return !$model->hasRole(['admin', 'store_manager']);
+        if ($user->isManagerOrAdmin()) {
+            return !$model->isManagerOrAdmin();
         }
 
         // Users can view their own profile
@@ -40,7 +40,7 @@ class UserPolicy
     public function create(User $user): bool
     {
         // Only admins can create new users
-        return $user->hasRole('admin');
+        return $user->isAdmin();
     }
 
     /**
@@ -49,13 +49,13 @@ class UserPolicy
     public function update(User $user, User $model): bool
     {
         // Admins can update any user
-        if ($user->hasRole('admin')) {
+        if ($user->isAdmin()) {
             return true;
         }
 
         // Store managers can only update customers, not other managers
-        if ($user->hasRole('store_manager')) {
-            return !$model->hasRole(['admin', 'store_manager']);
+        if ($user->isManagerOrAdmin()) {
+            return !$model->isManagerOrAdmin();
         }
 
         // Users can update their own profile
@@ -69,7 +69,7 @@ class UserPolicy
     {
         // Only admins can delete users
         // Prevent deleting oneself
-        return $user->hasRole('admin') && $user->id !== $model->id;
+        return $user->isAdmin() && $user->id !== $model->id;
     }
 
     /**
@@ -78,7 +78,7 @@ class UserPolicy
     public function manageRoles(User $user, User $model): bool
     {
         // Only admins can manage roles
-        return $user->hasRole('admin');
+        return $user->isAdmin();
     }
 
     /**
@@ -86,7 +86,7 @@ class UserPolicy
      */
     public function restore(User $user, User $model): bool
     {
-        return $user->hasRole('admin');
+        return $user->isAdmin();
     }
 
     /**
@@ -94,6 +94,6 @@ class UserPolicy
      */
     public function forceDelete(User $user, User $model): bool
     {
-        return $user->hasRole('admin') && $user->id !== $model->id;
+        return $user->isAdmin() && $user->id !== $model->id;
     }
 }

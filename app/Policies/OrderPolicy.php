@@ -13,8 +13,7 @@ class OrderPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'store_manager']) || 
-               ($user->hasRole('admin') || $user->hasRole('store_manager'));
+        return $user->isManagerOrAdmin();
     }
 
     /**
@@ -23,8 +22,7 @@ class OrderPolicy
     public function view(User $user, Order $order): bool
     {
         // Admins and store managers can view any order
-        if (in_array($user->role, ['admin', 'store_manager']) || 
-            ($user->hasRole('admin') || $user->hasRole('store_manager'))) {
+        if ($user->isManagerOrAdmin()) {
             return true;
         }
 
@@ -46,8 +44,7 @@ class OrderPolicy
      */
     public function update(User $user, Order $order): bool
     {
-        return in_array($user->role, ['admin', 'store_manager']) || 
-               ($user->hasRole('admin') || $user->hasRole('store_manager'));
+        return $user->isManagerOrAdmin();
     }
 
     /**
@@ -56,7 +53,7 @@ class OrderPolicy
     public function delete(User $user, Order $order): bool
     {
         // Only admins can delete orders
-        return $user->role === 'admin' || $user->hasRole('admin');
+        return $user->isAdmin();
     }
 
     /**
@@ -65,8 +62,7 @@ class OrderPolicy
     public function verifyPayment(User $user, Order $order): bool
     {
         // Admins and store managers can verify payments
-        return in_array($user->role, ['admin', 'store_manager']) || 
-               ($user->hasRole('admin') || $user->hasRole('store_manager'));
+        return $user->isManagerOrAdmin();
     }
 
     /**
@@ -74,7 +70,7 @@ class OrderPolicy
      */
     public function restore(User $user, Order $order): bool
     {
-        return $user->role === 'admin' || $user->hasRole('admin');
+        return $user->isAdmin();
     }
 
     /**
@@ -82,6 +78,6 @@ class OrderPolicy
      */
     public function forceDelete(User $user, Order $order): bool
     {
-        return $user->role === 'admin' || $user->hasRole('admin');
+        return $user->isAdmin();
     }
 }

@@ -322,7 +322,7 @@
                         <div class="relative aspect-square w-full overflow-hidden bg-tertiary-50">
                             <a :href="'/products/' + (product.slug || product.id)" class="block w-full h-full">
                                 <img 
-                                    :src="product.primary_image_url || (product.image_path ? '/storage/' + product.image_path : 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=600&q=80')" 
+                                :src="product.primary_image_url || 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=600&q=80'" 
                                     :alt="product.name_ar || product.name" 
                                     loading="lazy" 
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

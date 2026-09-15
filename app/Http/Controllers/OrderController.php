@@ -119,6 +119,7 @@ class OrderController extends Controller
         // Validate request
         $validated = $request->validate([
             'transaction_number' => ['nullable', 'string', 'digits:9'],
+            'proof_file_base64' => ['nullable', 'string'],
         ], [
             'transaction_number.digits' => 'رقم عملية شام كاش يجب أن يتألف من 9 أرقام.',
         ]);

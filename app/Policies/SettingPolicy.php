@@ -11,7 +11,7 @@ class SettingPolicy
      */
     public function view(User $user): bool
     {
-        return $user->hasRole(['admin', 'store_manager']);
+        return $user->isManagerOrAdmin();
     }
 
     /**
@@ -19,8 +19,7 @@ class SettingPolicy
      */
     public function update(User $user): bool
     {
-        // Only admins can update settings, especially payment settings
-        return $user->hasRole('admin');
+        return $user->isAdmin();
     }
 
     /**
@@ -28,7 +27,6 @@ class SettingPolicy
      */
     public function managePaymentSettings(User $user): bool
     {
-        // Only admins can manage payment settings
-        return $user->hasRole('admin');
+        return $user->isAdmin();
     }
 }
