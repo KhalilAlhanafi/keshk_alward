@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     sqlite3 \
     libsqlite3-dev \
     curl \
-    && docker-php-ext-install pdo pdo_sqlite zip
+    && docker-php-ext-install pdo pdo_sqlite pdo_mysql zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -42,9 +42,8 @@ RUN npm install && npm run build
 # Setup SQLite Database for the demo
 RUN touch database/database.sqlite
 
-# Run migrations (create tables + convert image_path to longText for Base64 storage)
-RUN php artisan migrate --force
+# We will run migrations in the CMD step against the remote production database.
 
 # Render assigns a dynamic port via the PORT environment variable
 # We tell Laravel to serve on this port
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
