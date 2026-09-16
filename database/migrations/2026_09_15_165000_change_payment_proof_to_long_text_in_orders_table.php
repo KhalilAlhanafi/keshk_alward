@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-            $table->longText('payment_proof')->nullable()->change();
-        });
+        DB::statement('ALTER TABLE orders MODIFY payment_proof LONGTEXT');
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-            $table->string('payment_proof', 255)->nullable()->change();
-        });
+        DB::statement('ALTER TABLE orders MODIFY payment_proof VARCHAR(255)');
     }
 };

@@ -12,23 +12,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->longText('image_path')->nullable()->change();
-        });
-
-        Schema::table('categories', function (Blueprint $table) {
-            $table->longText('image_path')->nullable()->change();
-        });
+        DB::statement('ALTER TABLE products MODIFY image_path LONGTEXT');
+        // categories might have already been modified if the migration ran partially,
+        // but it's safe to run it again or just let the second migration handle it.
+        // Actually, we'll just run it here too.
+        DB::statement('ALTER TABLE categories MODIFY image_path LONGTEXT');
     }
 
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->text('image_path')->nullable()->change();
-        });
-
-        Schema::table('categories', function (Blueprint $table) {
-            $table->text('image_path')->nullable()->change();
-        });
+        DB::statement('ALTER TABLE products MODIFY image_path TEXT');
+        DB::statement('ALTER TABLE categories MODIFY image_path TEXT');
     }
 };
