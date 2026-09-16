@@ -80,6 +80,7 @@ class Product extends Model
 
     /**
      * Accessor for all gallery image URLs of this product.
+     * Supports: Base64 data URIs (new), file paths via storage.serve (legacy), plain URLs.
      */
     public function getGalleryUrlsAttribute(): array
     {
@@ -89,19 +90,38 @@ class Product extends Model
 
         $raw = $this->image_path;
 
+        // Direct Base64 data URI (single image stored as-is)
+        if (str_starts_with($raw, 'data:')) {
+            return [$raw];
+        }
+
+        // Direct external URL
+        if (str_starts_with($raw, 'http')) {
+            return [$raw];
+        }
+
+        // JSON-encoded array or object of image variants
         if (str_starts_with($raw, '[') || str_starts_with($raw, '{')) {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) {
-                // If it is a list of images [ ... ]
+                // List of images [ ... ]
                 if (array_is_list($decoded)) {
                     $urls = [];
                     foreach ($decoded as $item) {
                         if (is_string($item)) {
-                            $urls[] = str_starts_with($item, 'http') ? $item : route('storage.serve', ['path' => $item]);
+                            // Base64 data URI or external URL — use as-is
+                            if (str_starts_with($item, 'data:') || str_starts_with($item, 'http')) {
+                                $urls[] = $item;
+                            } else {
+                                $urls[] = route('storage.serve', ['path' => $item]);
+                            }
                         } elseif (is_array($item)) {
+                            // Variant map: prefer medium, then original, then thumbnail
                             $p = $item['medium'] ?? $item['original'] ?? $item['thumbnail'] ?? $item['large'] ?? null;
                             if ($p) {
-                                $urls[] = str_starts_with($p, 'http') ? $p : route('storage.serve', ['path' => $p]);
+                                $urls[] = (str_starts_with($p, 'data:') || str_starts_with($p, 'http'))
+                                    ? $p
+                                    : route('storage.serve', ['path' => $p]);
                             }
                         }
                     }
@@ -109,17 +129,21 @@ class Product extends Model
                         return $urls;
                     }
                 } else {
-                    // Single image variant map: {"original": "...", "medium": "..."}
+                    // Single variant map: {"original": "...", "medium": "..."}
                     $p = $decoded['medium'] ?? $decoded['original'] ?? $decoded['thumbnail'] ?? $decoded['large'] ?? null;
                     if ($p) {
-                        return [str_starts_with($p, 'http') ? $p : route('storage.serve', ['path' => $p])];
+                        return [(str_starts_with($p, 'data:') || str_starts_with($p, 'http'))
+                            ? $p
+                            : route('storage.serve', ['path' => $p])];
                     }
                 }
             }
         }
 
-        return [str_starts_with($raw, 'http') ? $raw : route('storage.serve', ['path' => $raw])];
+        // Legacy: plain file path — serve via storage route
+        return [route('storage.serve', ['path' => $raw])];
     }
+
 
     /**
      * Accessor for primary image URL.

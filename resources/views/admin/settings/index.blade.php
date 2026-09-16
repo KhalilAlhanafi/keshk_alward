@@ -110,9 +110,15 @@
                             class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
                         >
                         @if(isset($settings['sham_cash_qr_image']) && $settings['sham_cash_qr_image'])
+                            @php
+                                $qrVal = $settings['sham_cash_qr_image'];
+                                $qrPreviewSrc = (str_starts_with($qrVal, 'data:') || str_starts_with($qrVal, 'http'))
+                                    ? $qrVal
+                                    : route('storage.serve', ['path' => $qrVal]);
+                            @endphp
                             <div class="mt-3">
                                 <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
-                                <img src="{{ route('storage.serve', ['path' => $settings['sham_cash_qr_image']]) }}" alt="QR Code" class="h-24 object-contain rounded-lg border border-neutral-200">
+                                <img src="{{ $qrPreviewSrc }}" alt="QR Code" class="h-24 object-contain rounded-lg border border-neutral-200">
                             </div>
                         @endif
                     </div>
@@ -199,9 +205,15 @@
                             class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
                         >
                         @if(isset($settings['home_hero_image']) && $settings['home_hero_image'])
+                            @php
+                                $heroVal = $settings['home_hero_image'];
+                                $heroPreviewSrc = (str_starts_with($heroVal, 'data:') || str_starts_with($heroVal, 'http'))
+                                    ? $heroVal
+                                    : route('storage.serve', ['path' => $heroVal]);
+                            @endphp
                             <div class="mt-3">
                                 <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
-                                <img src="{{ route('storage.serve', ['path' => $settings['home_hero_image']]) }}" alt="Hero Image" class="h-24 object-cover rounded-lg border border-neutral-200">
+                                <img src="{{ $heroPreviewSrc }}" alt="Hero Image" class="h-24 object-cover rounded-lg border border-neutral-200">
                             </div>
                         @endif
                     </div>

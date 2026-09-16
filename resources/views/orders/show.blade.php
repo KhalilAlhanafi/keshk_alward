@@ -365,16 +365,23 @@
                             </div>
                             
                             <!-- QR Code Image & Download -->
-                            @php $qrImage = \App\Models\Setting::get('sham_cash_qr_image'); @endphp
-                            @if($qrImage)
+                            @php
+                                $qrImage = \App\Models\Setting::get('sham_cash_qr_image');
+                                $qrSrc = $qrImage
+                                    ? (str_starts_with($qrImage, 'data:') || str_starts_with($qrImage, 'http')
+                                        ? $qrImage
+                                        : route('storage.serve', ['path' => $qrImage]))
+                                    : null;
+                            @endphp
+                            @if($qrSrc)
                                 <div class="flex flex-col items-center gap-2.5">
                                     <button 
                                         type="button" 
-                                        @click="openImageModal('{{ route('storage.serve', ['path' => $qrImage]) }}', 'رمز الاستجابة السريعة (QR Code) — شام كاش')" 
+                                        @click="openImageModal('{{ $qrSrc }}', 'رمز الاستجابة السريعة (QR Code) — شام كاش')" 
                                         class="block cursor-pointer hover:opacity-95 hover:scale-[1.02] transition-all group relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl" 
                                         title="انقر لفتح الصورة بحجم كبير في نفس الصفحة"
                                     >
-                                        <img src="{{ route('storage.serve', ['path' => $qrImage]) }}" alt="QR Code" class="w-48 h-48 object-contain rounded-2xl border border-neutral-200 shadow-sm bg-white p-2">
+                                        <img src="{{ $qrSrc }}" alt="QR Code" class="w-48 h-48 object-contain rounded-2xl border border-neutral-200 shadow-sm bg-white p-2">
                                         <div class="absolute inset-0 bg-primary/30 opacity-0 group-hover:opacity-100 rounded-2xl flex flex-col items-center justify-center transition-opacity text-white text-xs font-bold gap-1 backdrop-blur-[1px]">
                                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"></path></svg>
                                             <span>انقر لفتح الصورة</span>
@@ -382,7 +389,7 @@
                                     </button>
                                     <button 
                                         type="button"
-                                        @click="downloadImage('{{ route('storage.serve', ['path' => $qrImage]) }}', 'sham_cash_qr.png')"
+                                        @click="downloadImage('{{ $qrSrc }}', 'sham_cash_qr.png')"
                                         :disabled="downloading"
                                         class="flex items-center gap-2 text-xs font-bold text-white bg-primary hover:bg-primary-600 px-4 py-2 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                                     >

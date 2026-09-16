@@ -7,7 +7,6 @@ use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Gate;
 
 class SettingController extends Controller
@@ -52,12 +51,11 @@ class SettingController extends Controller
 
         foreach ($validated as $key => $value) {
             if ($request->hasFile($key)) {
-                // Delete old image if any
-                $oldPath = Setting::get($key);
-                if ($oldPath) {
-                    Storage::disk('public')->delete($oldPath);
-                }
-                $value = $request->file($key)->store('settings', 'public');
+                // تخزين الصورة كـ Base64 data URI مباشرةً في DB
+                // لا يحتاج لـ filesystem ويبقى دائماً عبر Restarts و Redeploys على Wasmer
+                $file = $request->file($key);
+                $mimeType = $file->getMimeType() ?: 'image/jpeg';
+                $value = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
             }
 
             // Keep booleans as actual booleans

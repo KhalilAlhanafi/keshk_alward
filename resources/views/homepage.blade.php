@@ -4,8 +4,16 @@
         <!-- 1. Hero Section -->
         <section class="relative rounded-card overflow-hidden shadow-soft bg-tertiary-100 min-h-[380px] md:min-h-[480px] flex items-center">
             <!-- Hero Background Image -->
-            <img 
-            src="{{ \App\Models\Setting::get('home_hero_image') ? route('storage.serve', ['path' => \App\Models\Setting::get('home_hero_image')]) : 'https://images.unsplash.com/photo-1487530811015-780930f87e8f?auto=format&fit=crop&w=1600&q=80' }}" 
+        @php
+            $heroImg = \App\Models\Setting::get('home_hero_image');
+            $heroSrc = $heroImg
+                ? (str_starts_with($heroImg, 'data:') || str_starts_with($heroImg, 'http')
+                    ? $heroImg
+                    : route('storage.serve', ['path' => $heroImg]))
+                : 'https://images.unsplash.com/photo-1487530811015-780930f87e8f?auto=format&fit=crop&w=1600&q=80';
+        @endphp
+        <img 
+            src="{{ $heroSrc }}"
                 alt="كشك الورد - باقات زهور فاخرة" 
                 class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85]"
             >

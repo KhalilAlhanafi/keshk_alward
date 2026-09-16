@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -44,7 +43,10 @@ class CategoryController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('categories', 'public');
+            // تخزين الصورة كـ Base64 data URI في DB (يعمل مع Wasmer/Ephemeral Filesystem)
+            $file = $request->file('image');
+            $mimeType = $file->getMimeType() ?: 'image/jpeg';
+            $imagePath = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
         $category = Category::create([
@@ -85,10 +87,10 @@ class CategoryController extends Controller
 
         $imagePath = $category->image_path;
         if ($request->hasFile('image')) {
-            if ($category->image_path) {
-                Storage::disk('public')->delete($category->image_path);
-            }
-            $imagePath = $request->file('image')->store('categories', 'public');
+            // تخزين الصورة الجديدة كـ Base64 data URI في DB (لا حذف من filesystem مطلوب)
+            $file = $request->file('image');
+            $mimeType = $file->getMimeType() ?: 'image/jpeg';
+            $imagePath = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
         $category->update([
@@ -112,10 +114,7 @@ class CategoryController extends Controller
     {
         $productsCount = $category->products()->count();
 
-        if ($category->image_path) {
-            Storage::disk('public')->delete($category->image_path);
-        }
-
+        // Base64 images are stored in DB — no filesystem cleanup needed
         $category->delete();
 
         $msg = $productsCount > 0 
