@@ -3,8 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
-
 
 return new class extends Migration
 {
@@ -14,16 +12,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE products MODIFY image_path LONGTEXT');
+        Schema::table('products', function (Blueprint $table) {
+            $table->longText('image_path')->nullable()->change();
+        });
         // categories might have already been modified if the migration ran partially,
         // but it's safe to run it again or just let the second migration handle it.
         // Actually, we'll just run it here too.
-        DB::statement('ALTER TABLE categories MODIFY image_path LONGTEXT');
+        Schema::table('categories', function (Blueprint $table) {
+            $table->longText('image_path')->nullable()->change();
+        });
     }
 
     public function down(): void
     {
-        DB::statement('ALTER TABLE products MODIFY image_path TEXT');
-        DB::statement('ALTER TABLE categories MODIFY image_path TEXT');
+        Schema::table('products', function (Blueprint $table) {
+            $table->text('image_path')->nullable()->change();
+        });
+        Schema::table('categories', function (Blueprint $table) {
+            $table->text('image_path')->nullable()->change();
+        });
     }
 };

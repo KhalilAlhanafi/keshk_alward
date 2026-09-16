@@ -3,8 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
-
 
 return new class extends Migration
 {
@@ -13,12 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE categories MODIFY image_path LONGTEXT');
+        Schema::table('categories', function (Blueprint $table) {
+            $table->longText('image_path')->nullable()->change();
+        });
 
-        DB::statement('ALTER TABLE settings MODIFY logo_path LONGTEXT');
-        DB::statement('ALTER TABLE settings MODIFY favicon_path LONGTEXT');
-        DB::statement('ALTER TABLE settings MODIFY qr_image_path LONGTEXT');
-        DB::statement('ALTER TABLE settings MODIFY hero_image_path LONGTEXT');
+        Schema::table('settings', function (Blueprint $table) {
+            $table->longText('logo_path')->nullable()->change();
+            $table->longText('favicon_path')->nullable()->change();
+            $table->longText('qr_image_path')->nullable()->change();
+            $table->longText('hero_image_path')->nullable()->change();
+        });
     }
 
     /**
@@ -26,11 +28,15 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE categories MODIFY image_path VARCHAR(255)');
+        Schema::table('categories', function (Blueprint $table) {
+            $table->string('image_path', 255)->nullable()->change();
+        });
 
-        DB::statement('ALTER TABLE settings MODIFY logo_path VARCHAR(255)');
-        DB::statement('ALTER TABLE settings MODIFY favicon_path VARCHAR(255)');
-        DB::statement('ALTER TABLE settings MODIFY qr_image_path VARCHAR(255)');
-        DB::statement('ALTER TABLE settings MODIFY hero_image_path VARCHAR(255)');
+        Schema::table('settings', function (Blueprint $table) {
+            $table->string('logo_path', 255)->nullable()->change();
+            $table->string('favicon_path', 255)->nullable()->change();
+            $table->string('qr_image_path', 255)->nullable()->change();
+            $table->string('hero_image_path', 255)->nullable()->change();
+        });
     }
 };
