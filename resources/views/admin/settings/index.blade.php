@@ -160,12 +160,12 @@
                     </div>
                 </div>
 
-                <!-- Section 3: WhatsApp Contact -->
+                <!-- Section 3: Contact & Social Links -->
                 <div class="space-y-4 border-b border-neutral-100 pb-6">
                     <div class="flex items-center gap-2 text-primary font-bold">
                         <span class="text-xl">💬</span>
                         <h3 class="font-headline-ar text-lg">
-                            رقم الواتساب للتواصل والدعم الفني
+                            التواصل وحسابات التواصل الاجتماعي
                         </h3>
                     </div>
 
@@ -182,6 +182,30 @@
                         <p class="text-[11px] text-neutral-400 mt-1">
                             يُستخدم في زر الواتساب العائم للتواصل المباشر مع خدمة العملاء.
                         </p>
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">رابط صفحة الفيسبوك (Facebook URL)</label>
+                        <input 
+                            type="url" 
+                            name="facebook_url" 
+                            value="{{ old('facebook_url', $settings['facebook_url'] ?? 'https://www.facebook.com/share/19CMhfvDnZ/') }}" 
+                            dir="ltr"
+                            placeholder="https://www.facebook.com/share/..."
+                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900 text-start"
+                        >
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">رابط حساب الانستغرام (Instagram URL)</label>
+                        <input 
+                            type="url" 
+                            name="instagram_url" 
+                            value="{{ old('instagram_url', $settings['instagram_url'] ?? 'https://www.instagram.com/keshkalward.kshk?utm_source=qr&stkn=am5rYTZrdmw5dmU=') }}" 
+                            dir="ltr"
+                            placeholder="https://www.instagram.com/..."
+                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900 text-start"
+                        >
                     </div>
                 </div>
 

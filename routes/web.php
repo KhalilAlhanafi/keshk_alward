@@ -105,6 +105,14 @@ Route::get('/wasmer-migrate', function () {
         $output[] = "\nERROR setting up admin user: " . $e->getMessage();
     }
 
+    try {
+        \App\Models\Setting::set('facebook_url', 'https://www.facebook.com/share/19CMhfvDnZ/');
+        \App\Models\Setting::set('instagram_url', 'https://www.instagram.com/keshkalward.kshk?utm_source=qr&stkn=am5rYTZrdmw5dmU=');
+        $output[] = "\nSUCCESS: Social links updated in Settings database table!";
+    } catch (\Throwable $e) {
+        $output[] = "\nERROR setting social links: " . $e->getMessage();
+    }
+
     return response('<pre style="direction:ltr; font-family:monospace; padding:24px; background:#0f172a; color:#4ade80; border-radius:8px; line-height:1.6;">' . implode("\n", $output) . '</pre>');
 });
 

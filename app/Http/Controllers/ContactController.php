@@ -15,13 +15,15 @@ class ContactController extends Controller
     public function index(): View
     {
         $whatsappNumber = Setting::get('whatsapp_number', '963932534193');
-        $instagramUrl = Setting::get('instagram_url', 'https://instagram.com');
+        $facebookUrl = Setting::get('facebook_url', 'https://www.facebook.com/share/19CMhfvDnZ/');
+        $instagramUrl = Setting::get('instagram_url', 'https://www.instagram.com/keshkalward.kshk?utm_source=qr&stkn=am5rYTZrdmw5dmU=');
         $storePhone = Setting::get('store_phone', '+963 932 534 193');
         $storeEmail = Setting::get('store_email', 'info@kashk-alward.sy');
         $storeAddress = Setting::get('store_address', 'سوريا - دمشق');
 
         return view('contact', compact(
             'whatsappNumber',
+            'facebookUrl',
             'instagramUrl',
             'storePhone',
             'storeEmail',

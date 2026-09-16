@@ -29,7 +29,7 @@
             <div class="flex items-center gap-1.5 sm:gap-2.5">
                 <!-- Facebook Icon -->
                 <a 
-                    href="{{ \App\Models\Setting::get('facebook_url', 'https://facebook.com') }}" 
+                    href="{{ \App\Models\Setting::get('facebook_url', 'https://www.facebook.com/share/19CMhfvDnZ/') }}" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     class="hidden md:block p-2 rounded-full text-white bg-[#1877F2] hover:bg-[#166fe5] hover:scale-105 transition-all shadow-sm"
@@ -42,7 +42,7 @@
                 </a>
                 <!-- Instagram Icon -->
                 <a 
-                    href="{{ \App\Models\Setting::get('instagram_url', 'https://instagram.com') }}" 
+                    href="{{ \App\Models\Setting::get('instagram_url', 'https://www.instagram.com/keshkalward.kshk?utm_source=qr&stkn=am5rYTZrdmw5dmU=') }}" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     class="hidden md:block p-2 rounded-full text-white bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 hover:scale-105 transition-all shadow-sm"
@@ -176,7 +176,7 @@
                             <!-- Footer Links in Drawer -->
                             <div class="border-t border-neutral-100 pt-4 space-y-3 font-body-ar text-sm">
                                 <a 
-                                    href="{{ \App\Models\Setting::get('facebook_url', 'https://facebook.com') }}" 
+                                    href="{{ \App\Models\Setting::get('facebook_url', 'https://www.facebook.com/share/19CMhfvDnZ/') }}" 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
                                     class="flex items-center justify-between p-3 rounded-2xl bg-[#1877F2] text-white font-bold hover:bg-[#166fe5] transition-colors shadow-sm"
@@ -192,7 +192,7 @@
                                     </svg>
                                 </a>
                                 <a 
-                                    href="{{ \App\Models\Setting::get('instagram_url', 'https://instagram.com') }}" 
+                                    href="{{ \App\Models\Setting::get('instagram_url', 'https://www.instagram.com/keshkalward.kshk?utm_source=qr&stkn=am5rYTZrdmw5dmU=') }}" 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
                                     class="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-bold shadow-sm"

@@ -344,20 +344,21 @@
                     @else
                         <!-- Pending / Upload States -->
                         <p>يرجى تحويل المبلغ المالي الكامل (<span class="font-bold text-primary font-body">{{ format_money($order->total) }}</span>) إلى رقم الحافظة التالي:</p>
-                        <div class="flex flex-col sm:flex-row items-start gap-6 mt-2 mb-6">
+                        <div class="flex flex-col sm:flex-row items-start gap-6 mt-2 mb-6 w-full max-w-full min-w-0">
                             <!-- Wallet Number & Copy -->
-                            <div>
-                                <label class="block text-xs text-neutral-500 mb-1">رقم الحافظة:</label>
-                                <div class="flex items-center gap-2 p-3 bg-surface border border-neutral-200 rounded-2xl">
-                                    <span class="font-body font-bold text-lg text-primary select-all" id="wallet-number">{{ $shamCashWallet ?? '0963900000000' }}</span>
+                            <div class="w-full sm:w-auto min-w-0 max-w-full">
+                                <label class="block text-xs font-bold text-neutral-500 mb-1.5">رقم الحافظة:</label>
+                                <div class="flex items-center justify-between gap-3 p-3 sm:p-3.5 bg-surface border border-neutral-200 rounded-2xl w-full min-w-0 shadow-xs">
+                                    <span class="font-body font-bold text-sm sm:text-base md:text-lg text-primary select-all break-all min-w-0 leading-relaxed tracking-wide" dir="ltr" id="wallet-number">{{ $shamCashWallet ?? '0963900000000' }}</span>
                                     <button 
                                         type="button"
                                         @click="
                                             navigator.clipboard.writeText('{{ $shamCashWallet ?? '0963900000000' }}');
                                             window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'تم نسخ رقم المحفظة بنجاح', type: 'success' } }));
                                         "
-                                        class="p-2 bg-tertiary-100 hover:bg-tertiary-200 text-primary rounded-xl transition-colors cursor-pointer"
+                                        class="flex-shrink-0 p-2 sm:p-2.5 bg-tertiary-100 hover:bg-tertiary-200 text-primary rounded-xl transition-colors cursor-pointer flex items-center justify-center"
                                         title="نسخ رقم المحفظة"
+                                        aria-label="نسخ رقم المحفظة"
                                     >
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                     </button>

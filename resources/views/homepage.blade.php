@@ -79,7 +79,7 @@
                         </p>
                         <div class="pt-1 flex justify-start">
                             <a 
-                                href="{{ \App\Models\Setting::get('instagram_url', 'https://instagram.com') }}" 
+                                href="{{ \App\Models\Setting::get('instagram_url', 'https://www.instagram.com/keshkalward.kshk?utm_source=qr&stkn=am5rYTZrdmw5dmU=') }}" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 class="inline-flex items-center gap-1.5 bg-white hover:bg-white/95 text-[#4A154B] font-bold text-xs sm:text-sm px-4 py-1.5 rounded-full shadow-sm hover:shadow transition-all duration-200 hover:scale-[1.03] active:scale-95"
