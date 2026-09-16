@@ -18,16 +18,14 @@ class AdminUserSeeder extends Seeder
         Role::firstOrCreate(['name' => 'store_manager', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
 
-        // Create Admin
-        $admin = User::firstOrCreate(
-            ['phone' => '+963911111111'],
-            [
-                'name' => 'مدير النظام',
-                'email' => 'admin@kashkalward.com',
-                'password' => bcrypt('password123'),
-                'email_verified_at' => now(),
-            ]
-        );
+        // Create or update Admin
+        $admin = User::firstOrNew(['phone' => '+963911111111']);
+        $admin->name = 'مدير النظام';
+        $admin->email = 'admin@kashkalward.com';
+        $admin->password = bcrypt('password123');
+        $admin->role = 'admin';
+        $admin->email_verified_at = $admin->email_verified_at ?: now();
+        $admin->save();
         $admin->assignRole('admin');
     }
 }

@@ -73,6 +73,38 @@ Route::get('/wasmer-migrate', function () {
         $output[] = "\n--- Artisan Migrate Error ---\n" . $e->getMessage();
     }
 
+    try {
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'store_manager', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
+
+        $admin = \App\Models\User::where('email', 'admin@kashkalward.com')
+            ->orWhere('phone', '+963911111111')
+            ->orWhere('phone', '0911111111')
+            ->first();
+
+        if (! $admin) {
+            $admin = new \App\Models\User();
+            $admin->name = 'مدير النظام';
+            $admin->email = 'admin@kashkalward.com';
+            $admin->phone = '+963911111111';
+        }
+
+        $admin->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $admin->role = 'admin';
+        $admin->email_verified_at = $admin->email_verified_at ?: now();
+        $admin->save();
+
+        if (! $admin->hasRole('admin')) {
+            $admin->assignRole('admin');
+        }
+
+        $output[] = "\nSUCCESS: Admin user active! Email: admin@kashkalward.com | Phone: +963911111111 | Password: password123";
+    } catch (\Throwable $e) {
+        $output[] = "\nERROR setting up admin user: " . $e->getMessage();
+    }
+
     return response('<pre style="direction:ltr; font-family:monospace; padding:24px; background:#0f172a; color:#4ade80; border-radius:8px; line-height:1.6;">' . implode("\n", $output) . '</pre>');
 });
 
