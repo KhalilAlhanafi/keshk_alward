@@ -268,11 +268,13 @@ class ProductController extends Controller
                     $keptList = json_decode($keptList, true) ?? [];
                 }
                 if (is_array($keptList)) {
+                    $remainingKept = array_values($keptList);
                     foreach ($currentEntries as $entry) {
                         $url = is_array($entry) ? ($entry['medium'] ?? $entry['original'] ?? '') : (string)$entry;
-                        foreach ($keptList as $k) {
+                        foreach ($remainingKept as $idx => $k) {
                             if ($k && (str_contains($url, (string)$k) || str_contains((string)$k, $url) || (is_string($entry) && $entry === $k))) {
                                 $existingKept[] = $entry;
+                                unset($remainingKept[$idx]);
                                 break;
                             }
                         }

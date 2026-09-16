@@ -215,7 +215,7 @@ test('admin can upload product with image variant processing and long image_path
     $product = Product::where('sku', 'KW-9904')->first();
     expect($product)->not->toBeNull()
         ->and($product->image_path)->not->toBeNull()
-        ->and($product->primary_image_url)->toContain('storage-serve?path=products');
+        ->and($product->primary_image_url)->toStartWith('data:image/');
 });
 
 test('admin can upload multiple images, customize arrangement details, and omit sku', function () {
@@ -355,6 +355,25 @@ test('admin can manage categories CRUD and observe linked products count', funct
         ->assertStatus(200);
 
     expect(Category::find($categoryId))->toBeNull();
+});
+
+test('admin can upload category image with optimized webp base64 conversion', function () {
+    $admin = makeAdminUser('admin');
+    $image = \Illuminate\Http\UploadedFile::fake()->image('tulips.png', 800, 800);
+
+    $response = $this->actingAs($admin)->post('/admin/categories', [
+        'name_ar' => 'قسم الزهور مع صورة',
+        'sort_order' => 1,
+        'is_active' => true,
+        'image' => $image,
+    ], ['Accept' => 'application/json']);
+
+    $response->assertStatus(201);
+    $category = Category::where('name_ar', 'قسم الزهور مع صورة')->first();
+    expect($category)->not->toBeNull()
+        ->and($category->image_path)->not->toBeNull()
+        ->and($category->image_path)->toStartWith('data:image/webp;base64,')
+        ->and($category->image_url)->toBe($category->image_path);
 });
 
 // ─── Delivery Area CRUD Tests ────────────────────────────────────────────────

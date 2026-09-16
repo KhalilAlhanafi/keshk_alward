@@ -44,6 +44,38 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
     ]);
 })->name('storage.serve');
 
+// Temporary/maintenance route for Wasmer Edge migrations and schema updates
+Route::get('/wasmer-migrate', function () {
+    $output = [];
+    $driver = \Illuminate\Support\Facades\DB::getDriverName();
+    $output[] = "Database driver: " . $driver;
+
+    if ($driver === 'mysql') {
+        foreach ([
+            'categories' => 'image_path',
+            'products' => 'image_path',
+            'addons' => 'image_path',
+            'orders' => 'payment_proof',
+        ] as $table => $column) {
+            try {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE {$table} MODIFY {$column} LONGTEXT NULL");
+                $output[] = "SUCCESS: {$table}.{$column} modified to LONGTEXT.";
+            } catch (\Throwable $e) {
+                $output[] = "ERROR on {$table}.{$column}: " . $e->getMessage();
+            }
+        }
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $output[] = "\n--- Artisan Migrate Output ---\n" . \Illuminate\Support\Facades\Artisan::output();
+    } catch (\Throwable $e) {
+        $output[] = "\n--- Artisan Migrate Error ---\n" . $e->getMessage();
+    }
+
+    return response('<pre style="direction:ltr; font-family:monospace; padding:24px; background:#0f172a; color:#4ade80; border-radius:8px; line-height:1.6;">' . implode("\n", $output) . '</pre>');
+});
+
 // Dev-only routes — only accessible in local/testing environments
 if (! app()->isProduction()) {
     Route::get('/phase1-test', function () {

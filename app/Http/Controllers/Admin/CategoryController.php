@@ -6,11 +6,32 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class CategoryController extends Controller
 {
+    /**
+     * Process category image and convert to optimized WebP Base64 data URI.
+     */
+    private function processCategoryImage(UploadedFile $file): string
+    {
+        try {
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file->getRealPath());
+            // Scale down to max 600x600 keeping aspect ratio
+            $image->scaleDown(600, 600);
+            $webpContent = $image->toWebp(80)->toString();
+            return 'data:image/webp;base64,' . base64_encode($webpContent);
+        } catch (\Throwable $e) {
+            $mimeType = $file->getMimeType() ?: 'image/jpeg';
+            return 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+        }
+    }
+
     /**
      * Display a listing of categories.
      */
@@ -43,10 +64,7 @@ class CategoryController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            // تخزين الصورة كـ Base64 data URI في DB (يعمل مع Wasmer/Ephemeral Filesystem)
-            $file = $request->file('image');
-            $mimeType = $file->getMimeType() ?: 'image/jpeg';
-            $imagePath = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $imagePath = $this->processCategoryImage($request->file('image'));
         }
 
         $category = Category::create([
@@ -87,10 +105,7 @@ class CategoryController extends Controller
 
         $imagePath = $category->image_path;
         if ($request->hasFile('image')) {
-            // تخزين الصورة الجديدة كـ Base64 data URI في DB (لا حذف من filesystem مطلوب)
-            $file = $request->file('image');
-            $mimeType = $file->getMimeType() ?: 'image/jpeg';
-            $imagePath = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $imagePath = $this->processCategoryImage($request->file('image'));
         }
 
         $category->update([
