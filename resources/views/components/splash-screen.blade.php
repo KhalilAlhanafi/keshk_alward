@@ -32,8 +32,8 @@
 >
     <!-- Background Ambient Glow & Floral Particles Effect -->
     <div class="absolute inset-0 pointer-events-none overflow-hidden">
-        <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-secondary/20 blur-3xl animate-pulse"></div>
-        <div class="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-[#E8A2B6]/15 blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+        <div class="absolute -top-24 -end-24 w-96 h-96 rounded-full bg-secondary/20 blur-3xl animate-pulse"></div>
+        <div class="absolute -bottom-24 -start-24 w-96 h-96 rounded-full bg-[#E8A2B6]/15 blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-secondary/10 blur-2xl"></div>
     </div>
 

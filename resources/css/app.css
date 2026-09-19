@@ -7,3 +7,17 @@
 [x-cloak] {
     display: none !important;
 }
+
+html, body {
+    overflow-x: hidden;
+}
+
+@layer utilities {
+    .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+}

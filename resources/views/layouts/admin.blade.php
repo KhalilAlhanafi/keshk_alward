@@ -35,22 +35,23 @@
                 </div>
 
                 <!-- Right Side Actions & User Profile -->
-                <div class="flex items-center gap-4 text-xs">
+                <div class="flex items-center gap-2 sm:gap-4 text-xs flex-shrink-0">
                     <a 
                         href="{{ route('home') }}" 
                         target="_blank" 
-                        class="bg-white/10 hover:bg-white/20 text-white font-bold px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5"
+                        class="bg-white/10 hover:bg-white/20 text-white font-bold px-2.5 sm:px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 min-h-[36px]"
+                        title="معاينة المتجر"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
-                        <span>معاينة المتجر</span>
+                        <span class="hidden sm:inline">معاينة المتجر</span>
                     </a>
 
                     <div class="h-6 w-px bg-white/20"></div>
 
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-secondary text-primary-950 font-bold flex items-center justify-center">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <div class="w-8 h-8 rounded-full bg-secondary text-primary-950 font-bold flex items-center justify-center flex-shrink-0">
                             {{ mb_substr(auth()->user()?->name ?? 'أدمين', 0, 1) }}
                         </div>
                         <span class="font-bold hidden sm:inline">{{ auth()->user()?->name ?? 'مدير النظام' }}</span>
@@ -58,7 +59,7 @@
 
                     <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
-                        <button type="submit" class="bg-red-500/20 hover:bg-red-500/30 text-white font-bold px-3 py-1.5 rounded-xl transition-colors text-xs flex items-center gap-1">
+                        <button type="submit" class="bg-red-500/20 hover:bg-red-500/30 text-white font-bold px-2.5 sm:px-3 py-2 rounded-xl transition-colors text-xs flex items-center gap-1 min-h-[36px] cursor-pointer">
                             <span>خروج 🚪</span>
                         </button>
                     </form>
@@ -68,13 +69,13 @@
         </header>
 
         <!-- Admin Body Layout: Sidebar + Main Content Grid -->
-        <div class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+        <div class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
             
             <!-- Sidebar Navigation (1 Column on Desktop) -->
             <aside x-data="{ open: false }" class="lg:col-span-1 bg-surface rounded-card p-4 border border-neutral-100 shadow-soft font-body-ar lg:sticky lg:top-20">
                 
                 <!-- Mobile Toggle Button -->
-                <button @click="open = !open" type="button" class="lg:hidden flex items-center justify-between w-full font-bold text-sm text-primary mb-2 pb-2 border-b border-neutral-100">
+                <button @click="open = !open" type="button" class="lg:hidden flex items-center justify-between w-full font-bold text-sm text-primary mb-2 py-3 border-b border-neutral-100 cursor-pointer">
                     <span class="flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         قائمة لوحة التحكم

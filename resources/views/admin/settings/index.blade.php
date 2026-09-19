@@ -63,7 +63,7 @@
         @endif
 
         <!-- Settings Form Card -->
-        <div class="bg-surface rounded-card p-6 md:p-8 border border-neutral-100 shadow-soft space-y-6">
+        <div class="bg-surface rounded-card p-4 sm:p-6 md:p-8 border border-neutral-100 shadow-soft space-y-6">
             <form 
                 method="POST" 
                 action="{{ route('admin.settings.update') }}" 
@@ -302,7 +302,7 @@
                     <button 
                         type="submit" 
                         :disabled="saving"
-                        class="bg-primary hover:bg-primary-600 text-white font-bold px-8 py-3 rounded-2xl text-xs md:text-sm shadow-md transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                        class="bg-primary hover:bg-primary-600 text-white font-bold px-8 py-3.5 rounded-2xl text-xs md:text-sm shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto min-h-[44px]"
                     >
                         <span x-show="!saving">حفظ جميع الإعدادات</span>
                         <span x-show="saving" class="flex items-center gap-2">

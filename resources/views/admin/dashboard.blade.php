@@ -2,7 +2,7 @@
     <div class="space-y-6 font-body-ar">
         
         <!-- Header Title -->
-        <div class="border-b border-neutral-100 pb-4 flex items-center justify-between">
+        <div class="border-b border-neutral-100 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
                 <h1 class="font-headline-ar text-2xl md:text-3xl text-primary font-bold">
                     لوحة التحكم والإحصائيات
@@ -17,10 +17,10 @@
         </div>
 
         <!-- Stat Cards Row (4 Cards) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             
             <!-- Revenue Card -->
-            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-2">
+            <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-2">
                 <div class="flex items-center justify-between text-xs text-neutral-500 font-bold">
                     <span>إجمالي المبيعات</span>
                     <span class="text-lg">💰</span>
@@ -35,7 +35,7 @@
             </div>
 
             <!-- Orders Card -->
-            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-2">
+            <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-2">
                 <div class="flex items-center justify-between text-xs text-neutral-500 font-bold">
                     <span>إجمالي الطلبات</span>
                     <span class="text-lg">📦</span>
@@ -50,7 +50,7 @@
             </div>
 
             <!-- Customers Card -->
-            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-2">
+            <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-2">
                 <div class="flex items-center justify-between text-xs text-neutral-500 font-bold">
                     <span>الزبائن المسجلين</span>
                     <span class="text-lg">👥</span>
@@ -65,7 +65,7 @@
             </div>
 
             <!-- Site Visitors Card -->
-            <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-2">
+            <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-2">
                 <div class="flex items-center justify-between text-xs text-neutral-500 font-bold">
                     <span>زوار الموقع</span>
                     <span class="text-lg">🌐</span>
@@ -82,7 +82,7 @@
         </div>
 
         <!-- Recent Incoming Orders Table Card -->
-        <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+        <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-4">
             <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
                 <h2 class="font-headline-ar text-xl text-primary font-bold">
                     أحدث الطلبات الواردة
@@ -93,7 +93,7 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-start text-xs text-neutral-700">
+                <table class="w-full text-start text-xs text-neutral-700 min-w-[650px]">
                     <thead class="bg-tertiary-100 text-primary font-bold border-b border-neutral-200">
                         <tr>
                             <th class="p-3 text-start">رقم الطلب</th>
@@ -142,7 +142,7 @@
                                 <td class="p-3 text-center">
                                     <a 
                                         href="{{ route('admin.orders.show', $order['id']) }}" 
-                                        class="bg-primary hover:bg-primary-600 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] shadow-xs inline-block"
+                                        class="bg-primary hover:bg-primary-600 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] shadow-xs inline-flex items-center justify-center min-h-[36px]"
                                     >
                                         معاينة
                                     </a>
@@ -161,7 +161,7 @@
         </div>
 
         <!-- Recent Products & Stock Info Card -->
-        <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+        <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-4">
             <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
                 <h2 class="font-headline-ar text-xl text-primary font-bold">
                     حالة المخزون وأحدث المنتجات
@@ -172,7 +172,7 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-start text-xs text-neutral-700">
+                <table class="w-full text-start text-xs text-neutral-700 min-w-[500px]">
                     <thead class="bg-tertiary-100 text-primary font-bold border-b border-neutral-200">
                         <tr>
                             <th class="p-3 text-start">المنتج</th>

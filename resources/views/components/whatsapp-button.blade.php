@@ -15,7 +15,7 @@
 
 <div 
     x-data="{ showTooltip: false }" 
-    class="fixed bottom-6 left-6 z-40 font-body-ar"
+    class="fixed bottom-6 start-6 z-40 font-body-ar"
 >
     <!-- Floating WhatsApp Button (Anchored solidly at fixed coordinates) -->
     <a 

@@ -22,8 +22,8 @@
             <div class="absolute inset-0 bg-gradient-to-r from-primary-950/70 via-primary-900/40 to-transparent"></div>
 
             <!-- Content Overlay -->
-            <div class="relative z-10 p-6 md:p-12 max-w-xl text-white space-y-4 font-body-ar">
-                <h1 class="font-headline-ar text-3xl md:text-5xl font-bold leading-tight">
+            <div class="relative z-10 p-4 sm:p-6 md:p-12 max-w-xl text-white space-y-4 font-body-ar">
+                <h1 class="font-headline-ar text-2xl sm:text-3xl md:text-5xl font-bold leading-tight">
                     {{ \App\Models\Setting::get('home_hero_title', 'جمال يزهر في كل مناسبة') }}
                 </h1>
                 <p class="text-tertiary-100 text-sm md:text-base leading-relaxed opacity-95">
@@ -60,7 +60,7 @@
             <div class="relative z-10 flex items-center justify-between gap-4 md:gap-6 w-full">
                 
                 <!-- Right Side (Far Right in RTL): Instagram Icon + Content + Button -->
-                <div class="flex items-center gap-3.5 md:gap-5">
+                <div class="flex items-center gap-3.5 md:gap-5 min-w-0">
                     <!-- 1. Instagram Squircle Badge (Far Right) -->
                     <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl bg-white/20 backdrop-blur-md border border-white/25 flex items-center justify-center flex-shrink-0 text-white shadow-inner">
                         <svg class="w-7 h-7 sm:w-8 sm:h-8 fill-current" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
                     </div>
 
                     <!-- 2. Text & Follow Action (Beside Icon to the left) -->
-                    <div class="space-y-1 text-right">
+                    <div class="space-y-1 text-right min-w-0">
                         <div class="flex items-center gap-1.5 font-headline-ar text-base sm:text-lg md:text-xl font-bold tracking-wide">
                             <span>Instagram تابعونا على</span>
                             <span class="text-sm sm:text-base">🌸</span>

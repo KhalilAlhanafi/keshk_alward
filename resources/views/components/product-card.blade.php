@@ -88,7 +88,7 @@
         <button 
             @click.stop.prevent="$store.wishlist.toggle({{ $id }})"
             type="button" 
-            class="absolute top-2 end-2 p-1.5 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none cursor-pointer z-10"
+            class="absolute top-2 end-2 p-2 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none cursor-pointer z-10"
             :title="$store.wishlist.has({{ $id }}) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
             aria-label="المفضلة"
         >
@@ -115,7 +115,7 @@
             @click="addToCart()" 
             :disabled="adding"
             type="button"
-            class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-body-ar font-bold text-xs md:text-sm py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+            class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-body-ar font-bold text-xs md:text-sm py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
         >
             <template x-if="!adding">
                 <span class="flex items-center gap-1.5">

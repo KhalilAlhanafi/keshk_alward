@@ -103,13 +103,13 @@
         </div>
 
         <!-- Quick Status Control Card -->
-        <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="space-y-1">
+        <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="space-y-1.5 w-full sm:w-auto">
                 <span class="text-xs text-neutral-400 font-bold block">تحديث حالة الطلب البرمجية:</span>
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                     <select 
                         x-model="currentStatus" 
-                        class="bg-tertiary-50 border border-neutral-200 focus:border-primary rounded-2xl px-4 py-2 text-xs font-bold text-primary cursor-pointer"
+                        class="bg-tertiary-50 border border-neutral-200 focus:border-primary rounded-2xl px-4 py-2.5 text-xs font-bold text-primary cursor-pointer flex-grow sm:flex-grow-0"
                     >
                         <option value="pending">قيد الانتظار (Pending)</option>
                         <option value="confirmed">تم التأكيد (Confirmed)</option>
@@ -123,7 +123,7 @@
                         @click="updateOrderStatus()" 
                         :disabled="updatingStatus"
                         type="button" 
-                        class="bg-primary hover:bg-primary-600 text-white font-bold px-5 py-2 rounded-2xl text-xs shadow-xs transition-colors disabled:opacity-50"
+                        class="bg-primary hover:bg-primary-600 text-white font-bold px-5 py-2.5 rounded-2xl text-xs shadow-xs transition-colors disabled:opacity-50 min-h-[38px] cursor-pointer"
                     >
                         <span x-show="!updatingStatus">حفظ الحالة</span>
                         <span x-show="updatingStatus">جاري الحفظ...</span>
@@ -131,9 +131,9 @@
                 </div>
             </div>
 
-            <div class="text-end space-y-1">
+            <div class="text-start sm:text-end space-y-1 w-full sm:w-auto">
                 <span class="text-xs text-neutral-400 block">طريقة وحالة الدفع:</span>
-                <div class="flex items-center gap-2 justify-end">
+                <div class="flex items-center gap-2 justify-start sm:justify-end flex-wrap">
                     <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-secondary/30 text-primary-950">
                         {{ $order->payment_method?->labelAr() ?? 'عند الاستلام' }}
                     </span>
@@ -177,7 +177,7 @@
                     }
                 }
             @endphp
-            <div class="bg-tertiary-50 rounded-card p-6 border border-tertiary-200/60 shadow-soft space-y-4">
+            <div class="bg-tertiary-50 rounded-card p-4 sm:p-6 border border-tertiary-200/60 shadow-soft space-y-4">
                 <h3 class="font-headline-ar text-xl text-primary font-bold border-b border-tertiary-200 pb-2">
                     التحقق من دفع شام كاش (Sham Cash Verification)
                 </h3>
@@ -190,7 +190,7 @@
                                 @if($proof)
                                     @if($isImage && $proofUrl)
                                         <div class="space-y-2">
-                                            <button type="button" @click="openImageModal('{{ $proofUrl }}', 'إيصال دفع شام كاش — طلب {{ $order->order_number }}')" title="انقر لعرض الصورة بالحجم الكامل" class="group relative block w-56 h-56 rounded-2xl overflow-hidden border-2 border-primary/20 bg-surface shadow-md hover:border-primary transition-all cursor-pointer">
+                                            <button type="button" @click="openImageModal('{{ $proofUrl }}', 'إيصال دفع شام كاش — طلب {{ $order->order_number }}')" title="انقر لعرض الصورة بالحجم الكامل" class="group relative block w-48 h-48 sm:w-56 sm:h-56 max-w-full rounded-2xl overflow-hidden border-2 border-primary/20 bg-surface shadow-md hover:border-primary transition-all cursor-pointer">
                                                 <img src="{{ $proofUrl }}" alt="إيصال شام كاش" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                                 <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1">
                                                     <span>🔍 تكبير الصورة</span>
@@ -249,14 +249,14 @@
         @endif
 
         <!-- Order Items Breakdown Table -->
-        <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
+        <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-4">
             <h3 class="font-headline-ar text-xl text-primary font-bold border-b border-neutral-100 pb-2">
                 المنتجات والمواصفات المطلوبة
             </h3>
 
             <div class="space-y-4">
                 @foreach($order->items as $item)
-                    <div class="flex items-center justify-between p-4 rounded-2xl bg-tertiary-50 border border-neutral-100 text-xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-tertiary-50 border border-neutral-100 text-xs">
                         <div class="flex items-center gap-3">
                             <div class="space-y-1">
                                 <h4 class="font-bold text-primary text-sm">{{ $item->product_name_snapshot }}</h4>

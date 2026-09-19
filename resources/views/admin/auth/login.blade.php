@@ -21,7 +21,7 @@
         <div class="absolute -top-32 -start-32 w-96 h-96 bg-primary/30 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-32 -end-32 w-96 h-96 bg-secondary/20 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="w-full max-w-md bg-surface rounded-3xl p-8 border border-white/10 shadow-2xl space-y-6 relative z-10">
+        <div class="w-full max-w-md bg-surface rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl space-y-6 relative z-10">
             
             <!-- Header Shield & Title -->
             <div class="text-center space-y-2">
@@ -97,7 +97,7 @@
                 <div>
                     <button 
                         type="submit" 
-                        class="w-full bg-primary hover:bg-primary-600 text-white font-bold py-3 rounded-2xl text-xs md:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                        class="w-full bg-primary hover:bg-primary-600 text-white font-bold py-3.5 rounded-2xl text-xs md:text-sm shadow-md transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
                     >
                         <span>دخول الإدارة الآمن 🔒</span>
                     </button>

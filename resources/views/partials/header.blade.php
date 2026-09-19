@@ -57,7 +57,7 @@
                 <!-- User Account / Login Button with Text -->
                 <a 
                     href="{{ Auth::check() ? route('dashboard') : route('login') }}" 
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-primary/90 bg-blue-50/80 hover:text-blue-800 hover:bg-blue-100 transition-colors text-xs font-bold font-body-ar border border-blue-200 hover:border-blue-300"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-primary/90 bg-blue-50/80 hover:text-blue-800 hover:bg-blue-100 transition-colors text-xs font-bold font-body-ar border border-blue-200 hover:border-blue-300 flex-shrink-0"
                     title="{{ Auth::check() ? 'حسابي' : 'تسجيل الدخول' }}"
                 >
                     <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
                 <!-- Cart Icon with Live Badge -->
                 <a 
                     href="{{ route('cart.index') }}" 
-                    class="relative p-2 rounded-full text-primary bg-pink-50 hover:bg-pink-100 transition-colors border border-primary/50 hover:border-primary"
+                    class="relative p-2 rounded-full text-primary bg-pink-50 hover:bg-pink-100 transition-colors border border-primary/50 hover:border-primary flex-shrink-0"
                     title="سلة التسوق"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +80,7 @@
                         x-show="$store.cart.count > 0" 
                         x-text="$store.cart.count"
                         x-transition
-                        class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold font-body w-5 h-5 rounded-full flex items-center justify-center border-2 border-surface shadow-sm"
+                        class="absolute -top-1 -end-1 bg-primary text-white text-[10px] font-bold font-body w-5 h-5 rounded-full flex items-center justify-center border-2 border-surface shadow-sm"
                         style="display: none;"
                     >
                         0
@@ -91,7 +91,7 @@
                 <button 
                     @click="mobileMenuOpen = true" 
                     type="button" 
-                    class="md:hidden p-2 rounded-full text-primary/90 hover:text-primary hover:bg-tertiary-100 transition-colors focus:outline-none cursor-pointer"
+                    class="md:hidden p-2.5 rounded-full text-primary/90 hover:text-primary hover:bg-tertiary-100 transition-colors focus:outline-none cursor-pointer flex-shrink-0"
                     aria-label="القائمة"
                     title="القائمة"
                 >

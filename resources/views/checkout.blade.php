@@ -348,7 +348,7 @@
                     <div class="space-y-3">
                         <!-- Sham Cash Option -->
                         <label 
-                            class="flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all"
+                            class="flex items-center justify-between flex-wrap gap-2 p-4 rounded-2xl border-2 cursor-pointer transition-all"
                             :class="paymentMethod === 'sham_cash' ? 'border-primary bg-tertiary-50/60 shadow-xs' : 'border-neutral-200 bg-surface hover:border-neutral-300'"
                         >
                             <div class="flex items-center gap-3">
@@ -363,7 +363,7 @@
 
                         <!-- Cash on Delivery Option -->
                         <label 
-                            class="flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all"
+                            class="flex items-center justify-between flex-wrap gap-2 p-4 rounded-2xl border-2 cursor-pointer transition-all"
                             :class="paymentMethod === 'cod' ? 'border-primary bg-tertiary-50/60 shadow-xs' : 'border-neutral-200 bg-surface hover:border-neutral-300'"
                         >
                             <div class="flex items-center gap-3">
@@ -383,7 +383,7 @@
                         @click="submitOrder()" 
                         :disabled="submitting"
                         type="button" 
-                        class="w-full bg-primary hover:bg-primary-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-lg disabled:opacity-50"
+                        class="w-full bg-primary hover:bg-primary-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-sm sm:text-lg disabled:opacity-50"
                     >
                         <template x-if="!submitting">
                             <span class="flex items-center gap-2">
@@ -411,7 +411,7 @@
             </div>
 
             <!-- Order Summary Sidebar Column (1 Column Desktop in RTL) -->
-            <div class="lg:col-span-1 sticky top-24 space-y-6">
+            <div class="lg:col-span-1 sticky top-24 space-y-6 order-last lg:order-none">
                 <div class="bg-purple-50/70 rounded-card p-6 border border-purple-100 shadow-soft space-y-6">
                     <h2 class="font-headline-ar text-xl text-primary font-bold border-b border-neutral-100 pb-3">
                         ملخص الطلب

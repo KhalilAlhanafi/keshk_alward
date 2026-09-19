@@ -277,23 +277,23 @@
             </div>
 
             <!-- Header Buttons & Search -->
-            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto">
                 <!-- Add Product Button -->
                 <button 
                     @click="openCreateModal()" 
                     type="button" 
-                    class="bg-primary hover:bg-primary-600 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-2xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                    class="bg-primary hover:bg-primary-600 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto min-h-[38px]"
                 >
                     <span class="text-lg leading-none">+</span>
                     <span>إضافة منتج جديد</span>
                 </button>
 
                 <!-- Search & Filter Form -->
-                <form method="GET" action="{{ route('admin.products.index') }}" class="flex items-center gap-2 flex-grow md:flex-grow-0">
+                <form method="GET" action="{{ route('admin.products.index') }}" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto flex-grow md:flex-grow-0">
                     <select 
                         name="category_id" 
                         onchange="this.form.submit()" 
-                        class="bg-surface border border-neutral-200 rounded-2xl px-3 py-2 text-xs text-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary"
+                        class="bg-surface border border-neutral-200 rounded-2xl px-3 py-2.5 text-xs text-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary w-full sm:w-auto cursor-pointer"
                     >
                         <option value="">جميع التصنيفات</option>
                         @foreach($categories as $cat)
@@ -303,13 +303,13 @@
                         @endforeach
                     </select>
 
-                    <div class="relative">
+                    <div class="relative w-full sm:w-auto flex-grow">
                         <input 
                             type="text" 
                             name="search" 
                             value="{{ request('search') }}" 
                             placeholder="بحث باسم المنتج..." 
-                            class="bg-surface border border-neutral-200 rounded-2xl ps-3 pe-8 py-2 text-xs md:text-sm w-44 md:w-56 focus:border-primary focus:ring-1 focus:ring-primary"
+                            class="bg-surface border border-neutral-200 rounded-2xl ps-3 pe-8 py-2.5 text-xs md:text-sm w-full sm:w-44 md:w-56 focus:border-primary focus:ring-1 focus:ring-primary"
                         >
                         @if(request('search') || request('category_id'))
                             <a href="{{ route('admin.products.index') }}" class="absolute inset-y-0 end-0 pe-2.5 flex items-center text-xs text-neutral-400 hover:text-neutral-700">
@@ -318,7 +318,7 @@
                         @endif
                     </div>
 
-                    <button type="submit" class="bg-tertiary-100 text-primary hover:bg-secondary/30 text-xs font-bold px-3 py-2 rounded-2xl transition-colors">
+                    <button type="submit" class="bg-tertiary-100 text-primary hover:bg-secondary/30 text-xs font-bold px-4 py-2.5 rounded-2xl transition-colors flex items-center justify-center cursor-pointer min-h-[38px]">
                         بحث
                     </button>
                 </form>
@@ -328,7 +328,7 @@
         <!-- Products Table Card -->
         <div class="bg-surface rounded-card p-4 md:p-6 border border-neutral-100 shadow-soft space-y-4">
             <div class="overflow-x-auto">
-                <table class="w-full text-start text-xs text-neutral-700">
+                <table class="w-full text-start text-xs text-neutral-700 min-w-[650px]">
                     <thead class="bg-tertiary-100 text-primary font-bold border-b border-neutral-200">
                         <tr>
                             <th class="p-3 text-start">المنتج</th>
@@ -397,8 +397,8 @@
                                         <!-- Storefront preview -->
                                         <a 
                                             href="{{ route('products.show', $prod->slug ?? $prod->id) }}" 
-                                            target="_blank"
-                                            class="p-2 text-neutral-400 hover:text-primary hover:bg-tertiary-100 rounded-xl transition-colors"
+                                            target="_blank" 
+                                            class="p-2.5 min-w-[36px] min-h-[36px] flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-tertiary-100 rounded-xl transition-colors"
                                             title="معاينة في المتجر"
                                         >
                                             ↗️
@@ -408,7 +408,7 @@
                                         <button 
                                             @click="openEditModal({{ json_encode($prod) }})" 
                                             type="button" 
-                                            class="p-2 text-neutral-600 hover:text-primary hover:bg-tertiary-100 rounded-xl transition-colors cursor-pointer"
+                                            class="p-2.5 min-w-[36px] min-h-[36px] flex items-center justify-center text-neutral-600 hover:text-primary hover:bg-tertiary-100 rounded-xl transition-colors cursor-pointer"
                                             title="تعديل المنتج"
                                         >
                                             ✏️
@@ -418,7 +418,7 @@
                                         <button 
                                             @click="confirmDelete({{ json_encode($prod) }})" 
                                             type="button" 
-                                            class="p-2 text-neutral-400 hover:text-error hover:bg-error/10 rounded-xl transition-colors cursor-pointer"
+                                            class="p-2.5 min-w-[36px] min-h-[36px] flex items-center justify-center text-neutral-400 hover:text-error hover:bg-error/10 rounded-xl transition-colors cursor-pointer"
                                             title="حذف المنتج"
                                         >
                                             🗑️
@@ -460,7 +460,7 @@
         >
             <div 
                 @click.away="if(!saving) createModalOpen = false"
-                class="bg-surface rounded-3xl p-6 md:p-8 max-w-2xl w-full border border-neutral-100 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto"
+                class="bg-surface rounded-3xl p-4 sm:p-6 md:p-8 max-w-2xl w-full border border-neutral-100 shadow-2xl space-y-5 my-4 sm:my-8 max-h-[90vh] overflow-y-auto"
             >
                 <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
                     <h3 class="font-headline-ar text-xl text-primary font-bold flex items-center gap-2">
@@ -676,7 +676,7 @@
         >
             <div 
                 @click.away="if(!saving) editModalOpen = false"
-                class="bg-surface rounded-3xl p-6 md:p-8 max-w-2xl w-full border border-neutral-100 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto"
+                class="bg-surface rounded-3xl p-4 sm:p-6 md:p-8 max-w-2xl w-full border border-neutral-100 shadow-2xl space-y-5 my-4 sm:my-8 max-h-[90vh] overflow-y-auto"
             >
                 <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
                     <h3 class="font-headline-ar text-xl text-primary font-bold flex items-center gap-2">
@@ -897,7 +897,7 @@
         >
             <div 
                 @click.away="if(!deleting) deleteModalOpen = false"
-                class="bg-surface rounded-3xl p-6 md:p-8 max-w-md w-full border border-neutral-100 shadow-2xl space-y-4 text-center"
+                class="bg-surface rounded-3xl p-5 sm:p-6 md:p-8 max-w-md w-full border border-neutral-100 shadow-2xl space-y-4 text-center"
             >
                 <div class="w-16 h-16 rounded-full bg-error/10 text-error flex items-center justify-center mx-auto text-2xl">
                     ⚠️

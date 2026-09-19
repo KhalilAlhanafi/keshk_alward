@@ -42,7 +42,7 @@ $icon = match($type) {
         }
     }"
     @toast.window="add($event)"
-    class="fixed bottom-6 end-6 z-50 space-y-3 max-w-sm pointer-events-none font-body-ar"
+    class="fixed bottom-20 sm:bottom-6 end-6 z-50 space-y-3 max-w-sm pointer-events-none font-body-ar"
 >
     <!-- Dynamic JS Toast Notifications -->
     <template x-for="t in toasts" :key="t.id">

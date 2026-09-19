@@ -183,7 +183,7 @@
             <button 
                 @click="openCreateModal()" 
                 type="button" 
-                class="bg-primary hover:bg-primary-600 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-2xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                class="bg-primary hover:bg-primary-600 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto min-h-[38px]"
             >
                 <span class="text-lg leading-none">+</span>
                 <span>إضافة قسم جديد</span>
@@ -193,7 +193,7 @@
         <!-- Categories Table Card -->
         <div class="bg-surface rounded-card p-4 md:p-6 border border-neutral-100 shadow-soft space-y-4">
             <div class="overflow-x-auto">
-                <table class="w-full text-start text-xs text-neutral-700">
+                <table class="w-full text-start text-xs text-neutral-700 min-w-[550px]">
                     <thead class="bg-tertiary-100 text-primary font-bold border-b border-neutral-200">
                         <tr>
                             <th class="p-3 text-start">القسم / التصنيف</th>
@@ -249,7 +249,7 @@
                                         <button 
                                             @click="openEditModal({{ json_encode($cat) }})" 
                                             type="button" 
-                                            class="p-2 text-neutral-600 hover:text-primary hover:bg-tertiary-100 rounded-xl transition-colors cursor-pointer"
+                                            class="p-2.5 min-w-[36px] min-h-[36px] flex items-center justify-center text-neutral-600 hover:text-primary hover:bg-tertiary-100 rounded-xl transition-colors cursor-pointer"
                                             title="تعديل القسم"
                                         >
                                             ✏️
@@ -259,7 +259,7 @@
                                         <button 
                                             @click="confirmDelete({{ json_encode($cat) }})" 
                                             type="button" 
-                                            class="p-2 text-neutral-400 hover:text-error hover:bg-error/10 rounded-xl transition-colors cursor-pointer"
+                                            class="p-2.5 min-w-[36px] min-h-[36px] flex items-center justify-center text-neutral-400 hover:text-error hover:bg-error/10 rounded-xl transition-colors cursor-pointer"
                                             title="حذف القسم"
                                         >
                                             🗑️
@@ -296,7 +296,7 @@
         >
             <div 
                 @click.away="if(!saving) createModalOpen = false"
-                class="bg-surface rounded-3xl p-6 md:p-8 max-w-lg w-full border border-neutral-100 shadow-2xl space-y-5"
+                class="bg-surface rounded-3xl p-4 sm:p-6 md:p-8 max-w-lg w-full border border-neutral-100 shadow-2xl space-y-5 my-4 sm:my-8 max-h-[90vh] overflow-y-auto"
             >
                 <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
                     <h3 class="font-headline-ar text-xl text-primary font-bold flex items-center gap-2">
@@ -393,7 +393,7 @@
         >
             <div 
                 @click.away="if(!saving) editModalOpen = false"
-                class="bg-surface rounded-3xl p-6 md:p-8 max-w-lg w-full border border-neutral-100 shadow-2xl space-y-5"
+                class="bg-surface rounded-3xl p-4 sm:p-6 md:p-8 max-w-lg w-full border border-neutral-100 shadow-2xl space-y-5 my-4 sm:my-8 max-h-[90vh] overflow-y-auto"
             >
                 <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
                     <h3 class="font-headline-ar text-xl text-primary font-bold flex items-center gap-2">
@@ -488,7 +488,7 @@
         >
             <div 
                 @click.away="if(!deleting) deleteModalOpen = false"
-                class="bg-surface rounded-3xl p-6 md:p-8 max-w-md w-full border border-neutral-100 shadow-2xl space-y-4 text-center"
+                class="bg-surface rounded-3xl p-5 sm:p-6 md:p-8 max-w-md w-full border border-neutral-100 shadow-2xl space-y-4 text-center my-4 sm:my-8"
             >
                 <div class="w-16 h-16 rounded-full bg-error/10 text-error flex items-center justify-center mx-auto text-2xl">
                     ⚠️

@@ -205,7 +205,7 @@
                 </div>
 
                 <!-- Gradient Fade Indicator on Mobile (Left Edge in RTL indicates more items to scroll) -->
-                <div class="sm:hidden pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-surface via-surface/80 to-transparent flex items-center justify-start ps-1 text-neutral-400">
+                <div class="sm:hidden pointer-events-none absolute inset-y-0 end-0 w-8 bg-gradient-to-r from-surface via-surface/80 to-transparent flex items-center justify-start ps-1 text-neutral-400">
                     <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -226,7 +226,7 @@
                         <option value="price_asc">السعر: من الأقل إلى الأعلى</option>
                         <option value="price_desc">السعر: من الأعلى إلى الأقل</option>
                     </select>
-                    <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-neutral-500">
+                    <div class="absolute inset-y-0 end-2.5 flex items-center pointer-events-none text-neutral-500">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -342,7 +342,7 @@
                             <button 
                                 @click.stop.prevent="$store.wishlist.toggle(product.id)"
                                 type="button" 
-                                class="absolute top-2 end-2 p-1.5 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none cursor-pointer z-10"
+                                class="absolute top-2 end-2 p-2 rounded-full bg-surface/80 backdrop-blur-md text-neutral-600 hover:text-secondary shadow-sm transition-colors focus:outline-none cursor-pointer z-10"
                                 :title="$store.wishlist.has(product.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
                                 aria-label="المفضلة"
                             >
@@ -370,8 +370,8 @@
                             <button 
                                 @click="addToCart()" 
                                 :disabled="adding"
-                                type="button"
-                                class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-body-ar font-bold text-xs md:text-sm py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+                                type="button" 
+                                class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-body-ar font-bold text-xs md:text-sm py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
                             >
                                 <template x-if="!adding">
                                     <span class="flex items-center gap-1.5">

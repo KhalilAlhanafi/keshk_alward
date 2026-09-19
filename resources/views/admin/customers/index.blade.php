@@ -13,24 +13,24 @@
             </div>
 
             <!-- Search Form -->
-            <form method="GET" action="{{ route('admin.customers.index') }}" class="flex items-center gap-2 w-full md:w-auto">
+            <form method="GET" action="{{ route('admin.customers.index') }}" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
                 <input 
                     type="text" 
                     name="search" 
                     value="{{ request('search') }}" 
                     placeholder="بحث باسم أو رقم الزبون..." 
-                    class="bg-surface border border-neutral-200 rounded-2xl px-4 py-2 text-xs md:text-sm w-full md:w-64 focus:border-primary focus:ring-1 focus:ring-primary"
+                    class="bg-surface border border-neutral-200 rounded-2xl px-4 py-2.5 text-xs md:text-sm w-full md:w-64 focus:border-primary focus:ring-1 focus:ring-primary"
                 >
-                <button type="submit" class="bg-primary text-white text-xs font-bold px-4 py-2 rounded-2xl shadow-xs hover:bg-primary-600 transition-colors">
+                <button type="submit" class="bg-primary text-white text-xs md:text-sm font-bold px-5 py-2.5 rounded-2xl shadow-xs hover:bg-primary-600 transition-colors flex items-center justify-center min-h-[38px] cursor-pointer">
                     بحث
                 </button>
             </form>
         </div>
 
         <!-- Customers Table Card -->
-        <div class="bg-surface rounded-card p-6 border border-neutral-100 shadow-soft space-y-4">
-            <div class="overflow-x-auto">
-                <table class="w-full text-start text-xs text-neutral-700">
+        <div class="bg-surface rounded-card p-4 sm:p-6 border border-neutral-100 shadow-soft space-y-4">
+            <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                <table class="w-full min-w-[550px] text-start text-xs text-neutral-700">
                     <thead class="bg-tertiary-100 text-primary font-bold border-b border-neutral-200">
                         <tr>
                             <th class="p-3 text-start">الاسم</th>

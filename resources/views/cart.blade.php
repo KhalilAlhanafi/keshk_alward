@@ -156,19 +156,19 @@
                         </div>
 
                         <!-- Stepper & Subtotal & Delete Action -->
-                        <div class="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
+                        <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 flex-wrap w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
                             <!-- Stepper -->
                             <div class="flex items-center border border-neutral-200 rounded-full bg-tertiary-50 p-1">
                                 <button 
                                     @click="updateQuantity(item.id, item.quantity - 1)" 
                                     type="button" 
-                                    class="w-7 h-7 rounded-full bg-surface text-neutral-700 font-bold hover:bg-tertiary-100 flex items-center justify-center text-xs"
+                                    class="w-8 h-8 rounded-full bg-surface text-neutral-700 font-bold hover:bg-tertiary-100 flex items-center justify-center text-xs"
                                 >−</button>
                                 <span x-text="item.quantity" class="px-3 font-bold font-body text-xs text-primary"></span>
                                 <button 
                                     @click="updateQuantity(item.id, item.quantity + 1)" 
                                     type="button" 
-                                    class="w-7 h-7 rounded-full bg-surface text-neutral-700 font-bold hover:bg-tertiary-100 flex items-center justify-center text-xs"
+                                    class="w-8 h-8 rounded-full bg-surface text-neutral-700 font-bold hover:bg-tertiary-100 flex items-center justify-center text-xs"
                                 >+</button>
                             </div>
 
@@ -242,7 +242,7 @@
         </div>
 
         <!-- 3. Empty-Cart State Container -->
-        <div x-show="items.length === 0" class="bg-purple-50/70 rounded-card p-12 text-center border border-purple-100 shadow-soft space-y-6 max-w-xl mx-auto font-body-ar">
+        <div x-show="items.length === 0" class="bg-purple-50/70 rounded-card p-6 sm:p-12 text-center border border-purple-100 shadow-soft space-y-6 max-w-xl mx-auto font-body-ar">
             <div class="w-20 h-20 rounded-full bg-tertiary-100 text-primary flex items-center justify-center mx-auto">
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
