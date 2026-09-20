@@ -45,8 +45,8 @@ apt install -y php8.2-fpm php8.2-cli php8.2-common php8.2-mysql php8.2-xml \
     php8.2-sqlite3 php8.2-redis
 
 # Configure PHP 8.2 FPM limits
-sed -i "s/upload_max_filesize = .*/upload_max_filesize = 25M/" /etc/php/8.2/fpm/php.ini
-sed -i "s/post_max_size = .*/post_max_size = 30M/" /etc/php/8.2/fpm/php.ini
+sed -i "s/upload_max_filesize = .*/upload_max_filesize = 64M/" /etc/php/8.2/fpm/php.ini
+sed -i "s/post_max_size = .*/post_max_size = 64M/" /etc/php/8.2/fpm/php.ini
 sed -i "s/memory_limit = .*/memory_limit = 256M/" /etc/php/8.2/fpm/php.ini
 systemctl restart php8.2-fpm
 
@@ -82,6 +82,8 @@ server {
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
+
+    client_max_body_size 64M;
 
     index index.php index.html;
     charset utf-8;

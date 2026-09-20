@@ -37,7 +37,7 @@ class SettingController extends Controller
         $rules = [
             'home_hero_title' => ['nullable', 'string', 'max:500'],
             'home_hero_subtitle' => ['nullable', 'string', 'max:1000'],
-            'home_hero_image' => ['nullable', 'image', 'max:4096'],
+            'home_hero_image' => ['nullable', 'image', 'max:25600'],
             'promo_banner_badge' => ['nullable', 'string', 'max:255'],
             'promo_banner_title' => ['nullable', 'string', 'max:500'],
             'promo_banner_text' => ['nullable', 'string', 'max:1000'],
@@ -45,7 +45,7 @@ class SettingController extends Controller
             'facebook_url' => ['nullable', 'string', 'max:500'],
             'instagram_url' => ['nullable', 'string', 'max:500'],
             'sham_cash_wallet_code' => ['nullable', 'string', 'max:100'],
-            'sham_cash_qr_image' => ['nullable', 'image', 'max:4096'],
+            'sham_cash_qr_image' => ['nullable', 'image', 'max:25600'],
             'payment_cod_enabled' => ['nullable'],
             'payment_sham_cash_enabled' => ['nullable'],
         ];

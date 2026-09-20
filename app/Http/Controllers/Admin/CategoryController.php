@@ -61,7 +61,7 @@ class CategoryController extends Controller
             'parent_id' => ['nullable', 'exists:categories,id'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
-            'image' => ['nullable', 'image', 'max:4096'],
+            'image' => ['nullable', 'image', 'max:25600'],
         ]);
 
         $imagePath = null;
@@ -102,7 +102,7 @@ class CategoryController extends Controller
             'parent_id' => ['nullable', 'exists:categories,id', Rule::notIn([$category->id])],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
-            'image' => ['nullable', 'image', 'max:4096'],
+            'image' => ['nullable', 'image', 'max:25600'],
         ]);
 
         $imagePath = $category->image_path;
