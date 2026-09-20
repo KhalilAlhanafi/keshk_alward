@@ -215,7 +215,7 @@ test('admin can upload product with image variant processing and long image_path
     $product = Product::where('sku', 'KW-9904')->first();
     expect($product)->not->toBeNull()
         ->and($product->image_path)->not->toBeNull()
-        ->and($product->primary_image_url)->toStartWith('data:image/');
+        ->and($product->primary_image_url)->toContain('/storage/products/');
 });
 
 test('admin can upload multiple images, customize arrangement details, and omit sku', function () {
@@ -372,8 +372,8 @@ test('admin can upload category image with optimized webp base64 conversion', fu
     $category = Category::where('name_ar', 'قسم الزهور مع صورة')->first();
     expect($category)->not->toBeNull()
         ->and($category->image_path)->not->toBeNull()
-        ->and($category->image_path)->toStartWith('data:image/webp;base64,')
-        ->and($category->image_url)->toBe($category->image_path);
+        ->and($category->image_path)->toStartWith('categories/')
+        ->and($category->image_url)->toContain('/storage/categories/');
 });
 
 // ─── Delivery Area CRUD Tests ────────────────────────────────────────────────

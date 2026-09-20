@@ -26,15 +26,17 @@ COPY . .
 # Install PHP dependencies
 RUN composer install --optimize-autoloader
 
-# Increase PHP Upload Limits for Wasmer / Docker
-# Base64-encoded images are larger than raw files, so we need higher limits
+# Configure PHP Upload Limits and memory
 RUN echo "upload_max_filesize = 20M" > /usr/local/etc/php/conf.d/uploads.ini \
     && echo "post_max_size = 25M" >> /usr/local/etc/php/conf.d/uploads.ini \
     && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/uploads.ini
 
 # Ensure storage directories exist and are writable
-RUN mkdir -p storage/app/public/payment-proofs \
-    && chmod -R 777 storage bootstrap/cache
+RUN mkdir -p storage/app/public/products \
+    && mkdir -p storage/app/public/categories \
+    && mkdir -p storage/app/public/settings \
+    && mkdir -p storage/app/public/payment-proofs \
+    && chmod -R 775 storage bootstrap/cache
 
 # Install Node dependencies and build Vite assets
 RUN npm install && npm run build

@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -53,11 +54,12 @@ class SettingController extends Controller
 
         foreach ($validated as $key => $value) {
             if ($request->hasFile($key)) {
-                // تخزين الصورة كـ Base64 data URI مباشرةً في DB
-                // لا يحتاج لـ filesystem ويبقى دائماً عبر Restarts و Redeploys على Wasmer
                 $file = $request->file($key);
-                $mimeType = $file->getMimeType() ?: 'image/jpeg';
-                $value = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+                $oldVal = Setting::get($key);
+                if ($oldVal && !str_starts_with($oldVal, 'data:') && !str_starts_with($oldVal, 'http')) {
+                    Storage::disk('public')->delete($oldVal);
+                }
+                $value = $file->store('settings', 'public');
             }
 
             // Keep booleans as actual booleans

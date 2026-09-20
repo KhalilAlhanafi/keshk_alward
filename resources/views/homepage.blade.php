@@ -9,7 +9,7 @@
             $heroSrc = $heroImg
                 ? (str_starts_with($heroImg, 'data:') || str_starts_with($heroImg, 'http')
                     ? $heroImg
-                    : route('storage.serve', ['path' => $heroImg]))
+                    : asset('storage/' . ltrim($heroImg, '/')))
                 : 'https://images.unsplash.com/photo-1487530811015-780930f87e8f?auto=format&fit=crop&w=1600&q=80';
         @endphp
         <img 

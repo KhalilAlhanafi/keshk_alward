@@ -63,12 +63,12 @@ class Category extends Model
     {
         if (empty($this->image_path)) return null;
 
-        // Base64 data URI or external URL — use as-is
-        if (str_starts_with($this->image_path, 'data:') || str_starts_with($this->image_path, 'http')) {
+        // Base64 data URI or external URL — use as-is (legacy fallback)
+        if (str_starts_with($this->image_path, 'data:') || str_starts_with($this->image_path, 'http://') || str_starts_with($this->image_path, 'https://')) {
             return $this->image_path;
         }
 
-        // Legacy: file path — serve via storage route
-        return route('storage.serve', ['path' => $this->image_path]);
+        // Direct static storage asset URL for instant web server serving
+        return asset('storage/' . ltrim($this->image_path, '/'));
     }
 }

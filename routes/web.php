@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 //  Public Routes
 // ───────────────────────────────────────────────────────────
 
-// Serve Storage Files Fallback (For Wasmer Edge environments where symlinks are restricted)
+// Serve Storage Files (Permanent redirect to static asset for zero-PHP serving, with forced download fallback)
 Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
     $path = ltrim((string) $request->query('path'), "/\\");
     if (empty($path)) {
@@ -39,82 +39,10 @@ Route::get('/storage-serve', function (\Illuminate\Http\Request $request) {
         ]);
     }
 
-    return response()->file($fullPath, [
-        'Cache-Control' => 'public, max-age=31536000'
-    ]);
+    // 301 Permanent Redirect to the static storage URL for high-performance direct web server delivery
+    return redirect(asset('storage/' . $path), 301);
 })->name('storage.serve');
 
-// Temporary/maintenance route for Wasmer Edge migrations and schema updates
-Route::get('/wasmer-migrate', function () {
-    $output = [];
-    $driver = \Illuminate\Support\Facades\DB::getDriverName();
-    $output[] = "Database driver: " . $driver;
-
-    if ($driver === 'mysql') {
-        foreach ([
-            'categories' => 'image_path',
-            'products' => 'image_path',
-            'addons' => 'image_path',
-            'orders' => 'payment_proof',
-        ] as $table => $column) {
-            try {
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE {$table} MODIFY {$column} LONGTEXT NULL");
-                $output[] = "SUCCESS: {$table}.{$column} modified to LONGTEXT.";
-            } catch (\Throwable $e) {
-                $output[] = "ERROR on {$table}.{$column}: " . $e->getMessage();
-            }
-        }
-    }
-
-    try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $output[] = "\n--- Artisan Migrate Output ---\n" . \Illuminate\Support\Facades\Artisan::output();
-    } catch (\Throwable $e) {
-        $output[] = "\n--- Artisan Migrate Error ---\n" . $e->getMessage();
-    }
-
-    try {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'store_manager', 'guard_name' => 'web']);
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
-
-        $admin = \App\Models\User::where('email', 'admin@kashkalward.com')
-            ->orWhere('phone', '+963911111111')
-            ->orWhere('phone', '0911111111')
-            ->first();
-
-        if (! $admin) {
-            $admin = new \App\Models\User();
-            $admin->name = 'مدير النظام';
-            $admin->email = 'admin@kashkalward.com';
-            $admin->phone = '+963911111111';
-        }
-
-        $admin->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $admin->role = 'admin';
-        $admin->email_verified_at = $admin->email_verified_at ?: now();
-        $admin->save();
-
-        if (! $admin->hasRole('admin')) {
-            $admin->assignRole('admin');
-        }
-
-        $output[] = "\nSUCCESS: Admin user active! Email: admin@kashkalward.com | Phone: +963911111111 | Password: password123";
-    } catch (\Throwable $e) {
-        $output[] = "\nERROR setting up admin user: " . $e->getMessage();
-    }
-
-    try {
-        \App\Models\Setting::set('facebook_url', 'https://www.facebook.com/share/19CMhfvDnZ/');
-        \App\Models\Setting::set('instagram_url', 'https://www.instagram.com/keshkalward.kshk?utm_source=qr&stkn=am5rYTZrdmw5dmU=');
-        $output[] = "\nSUCCESS: Social links updated in Settings database table!";
-    } catch (\Throwable $e) {
-        $output[] = "\nERROR setting social links: " . $e->getMessage();
-    }
-
-    return response('<pre style="direction:ltr; font-family:monospace; padding:24px; background:#0f172a; color:#4ade80; border-radius:8px; line-height:1.6;">' . implode("\n", $output) . '</pre>');
-});
 
 // Dev-only routes — only accessible in local/testing environments
 if (! app()->isProduction()) {

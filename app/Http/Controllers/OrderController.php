@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -132,13 +133,18 @@ class OrderController extends Controller
         }
 
         try {
-            // Handle file upload
-            if ($request->input('proof_file_base64')) {
+            // Handle payment proof file upload - saved to public disk
+            if ($request->hasFile('proof_file')) {
+                $order->payment_proof = $request->file('proof_file')->store('payment-proofs', 'public');
+            } elseif ($request->input('proof_file_base64')) {
                 $base64 = $request->input('proof_file_base64');
                 if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
-                    // Save the raw base64 directly to the database!
-                    // This bypasses the ephemeral filesystem of Wasmer Edge entirely.
-                    $order->payment_proof = $base64;
+                    $imageData = base64_decode(substr($base64, strpos($base64, ',') + 1));
+                    $ext = strtolower($type[1]);
+                    if ($ext === 'jpeg') $ext = 'jpg';
+                    $filename = 'payment-proofs/proof_' . Str::uuid()->toString() . '.' . $ext;
+                    Storage::disk('public')->put($filename, $imageData);
+                    $order->payment_proof = $filename;
                 }
             }
             if (!empty($request->input('transaction_number'))) {

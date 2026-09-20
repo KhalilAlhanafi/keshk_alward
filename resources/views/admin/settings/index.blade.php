@@ -114,7 +114,7 @@
                                 $qrVal = $settings['sham_cash_qr_image'];
                                 $qrPreviewSrc = (str_starts_with($qrVal, 'data:') || str_starts_with($qrVal, 'http'))
                                     ? $qrVal
-                                    : route('storage.serve', ['path' => $qrVal]);
+                                    : asset('storage/' . ltrim($qrVal, '/'));
                             @endphp
                             <div class="mt-3">
                                 <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
@@ -233,7 +233,7 @@
                                 $heroVal = $settings['home_hero_image'];
                                 $heroPreviewSrc = (str_starts_with($heroVal, 'data:') || str_starts_with($heroVal, 'http'))
                                     ? $heroVal
-                                    : route('storage.serve', ['path' => $heroVal]);
+                                    : asset('storage/' . ltrim($heroVal, '/'));
                             @endphp
                             <div class="mt-3">
                                 <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>

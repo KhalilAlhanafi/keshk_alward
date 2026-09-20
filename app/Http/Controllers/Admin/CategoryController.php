@@ -7,6 +7,7 @@ use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Intervention\Image\ImageManager;
@@ -15,7 +16,7 @@ use Intervention\Image\Drivers\Gd\Driver;
 class CategoryController extends Controller
 {
     /**
-     * Process category image and convert to optimized WebP Base64 data URI.
+     * Process category image and save to disk as an optimized WebP file.
      */
     private function processCategoryImage(UploadedFile $file): string
     {
@@ -25,10 +26,11 @@ class CategoryController extends Controller
             // Scale down to max 600x600 keeping aspect ratio
             $image->scaleDown(600, 600);
             $webpContent = $image->toWebp(80)->toString();
-            return 'data:image/webp;base64,' . base64_encode($webpContent);
+            $path = 'categories/' . Str::uuid()->toString() . '.webp';
+            Storage::disk('public')->put($path, $webpContent);
+            return $path;
         } catch (\Throwable $e) {
-            $mimeType = $file->getMimeType() ?: 'image/jpeg';
-            return 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            return $file->store('categories', 'public');
         }
     }
 
@@ -105,6 +107,9 @@ class CategoryController extends Controller
 
         $imagePath = $category->image_path;
         if ($request->hasFile('image')) {
+            if ($imagePath && !str_starts_with($imagePath, 'data:')) {
+                Storage::disk('public')->delete($imagePath);
+            }
             $imagePath = $this->processCategoryImage($request->file('image'));
         }
 
@@ -129,7 +134,11 @@ class CategoryController extends Controller
     {
         $productsCount = $category->products()->count();
 
-        // Base64 images are stored in DB — no filesystem cleanup needed
+        // Delete physical category image from disk
+        if ($category->image_path && !str_starts_with($category->image_path, 'data:')) {
+            Storage::disk('public')->delete($category->image_path);
+        }
+
         $category->delete();
 
         $msg = $productsCount > 0 

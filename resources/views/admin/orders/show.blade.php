@@ -172,7 +172,7 @@
                         } elseif (\Illuminate\Support\Str::startsWith($proof, ['storage/', '/storage/'])) {
                             $proofUrl = asset(ltrim($proof, '/'));
                         } else {
-                            $proofUrl = route('storage.serve', ['path' => ltrim(str_replace('public/', '', $proof), '/')]);
+                            $proofUrl = asset('storage/' . ltrim(str_replace('public/', '', $proof), '/'));
                         }
                     }
                 }
