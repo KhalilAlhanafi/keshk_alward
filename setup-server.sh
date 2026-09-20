@@ -203,7 +203,7 @@ ENVFILE
 # 10. Install PHP & Node dependencies and build
 echo "--> 10/11 Installing dependencies & Building assets..."
 cd /var/www/keshkalward
-composer install --no-dev --optimize-autoloader
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 npm install
 npm run build
 
