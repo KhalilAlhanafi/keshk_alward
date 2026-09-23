@@ -126,7 +126,9 @@ class CatalogController extends Controller
         });
 
         // Allow authenticated admin to preview inactive / hidden products
-        if (!auth()->check() || auth()->user()->role !== 'admin') {
+        /** @var \App\Models\User|null $user */
+        $user = $request->user();
+        if (!$user || !$user->isAdmin()) {
             $query->where('is_active', true);
         }
 

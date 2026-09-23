@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Services\CartTotalsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class CartController extends Controller
@@ -26,8 +27,8 @@ class CartController extends Controller
      */
     private function getOrCreateCart(Request $request): Cart
     {
-        if (auth()->check()) {
-            return Cart::firstOrCreate(['user_id' => auth()->id()]);
+        if (Auth::check()) {
+            return Cart::firstOrCreate(['user_id' => Auth::id()]);
         }
 
         $sessionToken = $request->cookie('session_token');
