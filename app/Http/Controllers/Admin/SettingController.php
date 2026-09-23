@@ -48,6 +48,8 @@ class SettingController extends Controller
             'sham_cash_qr_image' => ['nullable', 'image', 'max:25600'],
             'payment_cod_enabled' => ['nullable'],
             'payment_sham_cash_enabled' => ['nullable'],
+            'orders_enabled' => ['nullable'],
+            'orders_closed_message' => ['nullable', 'string', 'max:500'],
         ];
 
         $validated = $request->validate($rules);
@@ -63,7 +65,7 @@ class SettingController extends Controller
             }
 
             // Keep booleans as actual booleans
-            if (in_array($key, ['payment_cod_enabled', 'payment_sham_cash_enabled'])) {
+            if (in_array($key, ['payment_cod_enabled', 'payment_sham_cash_enabled', 'orders_enabled'])) {
                 $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
             }
 
@@ -79,4 +81,34 @@ class SettingController extends Controller
 
         return redirect()->route('admin.settings.index')->with('success', 'تم حفظ الإعدادات بنجاح.');
     }
+
+    /**
+     * Quick toggle storewide orders status (accepting orders or closed).
+     */
+    public function toggleOrders(Request $request): JsonResponse|RedirectResponse
+    {
+        Gate::authorize('update', Setting::class);
+
+        $current = (bool) Setting::get('orders_enabled', true);
+        $newStatus = $request->has('orders_enabled')
+            ? filter_var($request->input('orders_enabled'), FILTER_VALIDATE_BOOLEAN)
+            : !$current;
+
+        Setting::set('orders_enabled', $newStatus);
+
+        $message = $newStatus
+            ? 'تم تفعيل استقبال الطلبات في المتجر بنجاح ✓'
+            : 'تم إيقاف استقبال الطلبات في المتجر مؤقتاً لنفاد البضاعة ⛔';
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'orders_enabled' => $newStatus,
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
 }
+

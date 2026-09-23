@@ -374,4 +374,22 @@ class ProductController extends Controller
             'message' => 'تم حذف المنتج بنجاح.'
         ]);
     }
+
+    /**
+     * Quick toggle product active / hidden status (out of stock).
+     */
+    public function toggleStatus(Product $product): JsonResponse
+    {
+        $product->is_active = !$product->is_active;
+        $product->save();
+
+        return response()->json([
+            'success' => true,
+            'is_active' => (bool) $product->is_active,
+            'message' => $product->is_active
+                ? "تم إظهار منتج '{$product->name}' وإتاحته في المتجر بنجاح ✓"
+                : "تم إخفاء منتج '{$product->name}' من المتجر لنفاد الكمية 🚫",
+        ]);
+    }
 }
+

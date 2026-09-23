@@ -441,3 +441,107 @@ test('validation rejects invalid product, category and delivery area submissions
       ->assertJsonValidationErrors(['city_ar', 'area_ar', 'delivery_fee']);
 });
 
+test('admin can toggle product status to hide when out of stock and customer cannot order it', function () {
+    $admin = makeAdminUser('admin');
+    $customer = makeCustomerUser();
+
+    $category = Category::create([
+        'name_ar' => 'باقات تجريبية',
+        'slug' => 'test-cat-' . uniqid(),
+        'is_active' => true,
+    ]);
+
+    $product = Product::create([
+        'category_id' => $category->id,
+        'name_ar' => 'باقة التوليب الملكية',
+        'slug' => 'royal-tulip-' . uniqid(),
+        'base_price' => 150000,
+        'is_active' => true,
+    ]);
+
+    // 1. Admin toggles product status to inactive (out of stock)
+    $response = $this->actingAs($admin)->patchJson("/admin/products/{$product->id}/toggle-status");
+    $response->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'is_active' => false,
+        ]);
+
+    $product->refresh();
+    expect($product->is_active)->toBeFalse();
+
+    // 2. Customer tries to add the inactive product to cart -> should be rejected with 422
+    $cartResponse = $this->actingAs($customer)->postJson('/cart', [
+        'product_id' => $product->id,
+        'quantity' => 1,
+    ]);
+    $cartResponse->assertStatus(422)
+        ->assertJsonFragment(['message' => 'عذراً، هذا المنتج غير متوفر حالياً لنفاد الكمية.']);
+
+    // 3. Admin toggles product status back to active
+    $response2 = $this->actingAs($admin)->patchJson("/admin/products/{$product->id}/toggle-status");
+    $response2->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'is_active' => true,
+        ]);
+
+    $product->refresh();
+    expect($product->is_active)->toBeTrue();
+});
+
+test('admin can toggle storewide orders to stop orders when all stock is out', function () {
+    $admin = makeAdminUser('admin');
+    $customer = makeCustomerUser();
+
+    $category = Category::create([
+        'name_ar' => 'ورود طبيعية',
+        'slug' => 'natural-roses-' . uniqid(),
+        'is_active' => true,
+    ]);
+
+    $product = Product::create([
+        'category_id' => $category->id,
+        'name_ar' => 'باقة الجوري الأحمر',
+        'slug' => 'red-roses-' . uniqid(),
+        'base_price' => 120000,
+        'is_active' => true,
+    ]);
+
+    // 1. Admin stops all orders
+    $response = $this->actingAs($admin)->postJson('/admin/settings/toggle-orders', [
+        'orders_enabled' => false,
+    ]);
+    $response->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'orders_enabled' => false,
+        ]);
+
+    expect(Setting::get('orders_enabled'))->toBeFalse();
+
+    // 2. Customer attempts to add to cart -> rejected with 422
+    $cartResponse = $this->actingAs($customer)->postJson('/cart', [
+        'product_id' => $product->id,
+        'quantity' => 1,
+    ]);
+    $cartResponse->assertStatus(422);
+
+    // 3. Customer attempts to view checkout -> redirected to cart
+    $checkoutResponse = $this->actingAs($customer)->get('/checkout');
+    $checkoutResponse->assertRedirect(route('cart.index'));
+
+    // 4. Admin re-enables store orders
+    $response2 = $this->actingAs($admin)->postJson('/admin/settings/toggle-orders', [
+        'orders_enabled' => true,
+    ]);
+    $response2->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'orders_enabled' => true,
+        ]);
+
+    expect(Setting::get('orders_enabled'))->toBeTrue();
+});
+
+

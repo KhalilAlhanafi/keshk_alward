@@ -43,6 +43,14 @@
         <!-- Splash Screen (First Visit) -->
         <x-splash-screen />
 
+        <!-- Store Closed / Orders Paused Top Banner -->
+        @if(!\App\Models\Setting::get('orders_enabled', true))
+            <div class="bg-gradient-to-r from-rose-700 via-rose-600 to-rose-700 text-white text-xs md:text-sm py-2.5 px-4 text-center font-bold flex items-center justify-center gap-2 shadow-md relative z-50">
+                <span class="text-base">📢</span>
+                <span>{{ \App\Models\Setting::get('orders_closed_message', 'نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة.') }}</span>
+            </div>
+        @endif
+
         <!-- Storefront Header -->
         @include('partials.header')
 

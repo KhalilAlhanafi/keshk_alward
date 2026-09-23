@@ -372,59 +372,71 @@
                         </div>
                     </div>
 
-                    <!-- Row 2: Action CTA Buttons ("اطلب الآن" & "أضف إلى السلة") -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        
-                        <!-- 1. Primary "Order Now" Button (اطلب الآن - ينقل فوراً إلى السلة) -->
-                        <button 
-                            @click="addToCart(true)" 
-                            :disabled="loading"
-                            type="button" 
-                            class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm md:text-base order-1"
-                            title="طلب الباقة والانتقال فوراً إلى سلة التسوق"
-                        >
-                            <template x-if="!(loading && orderingNow)">
-                                <span>اطلب الآن</span>
-                            </template>
-                            <template x-if="loading && orderingNow">
-                                <span class="flex items-center justify-center gap-2">
-                                    <svg class="animate-spin w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>جاري التحويل...</span>
-                                </span>
-                            </template>
-                        </button>
+                    <!-- Row 2: Action CTA Buttons ("اطلب الآن" & "أضف إلى السلة") or Notice -->
+                    @if(!\App\Models\Setting::get('orders_enabled', true))
+                        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-center space-y-1">
+                            <p class="font-bold text-sm text-amber-900">⛔ استقبال الطلبات متوقف مؤقتاً</p>
+                            <p class="text-xs text-amber-700 leading-relaxed">{{ \App\Models\Setting::get('orders_closed_message', 'نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة.') }}</p>
+                        </div>
+                    @elseif(!$product->is_active)
+                        <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-center space-y-1">
+                            <p class="font-bold text-sm text-rose-900">⛔ المنتج غير متوفر حالياً</p>
+                            <p class="text-xs text-rose-700 leading-relaxed">تم إخفاء هذا المنتج مؤقتاً لنفاد الكمية من المتجر.</p>
+                        </div>
+                    @else
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            
+                            <!-- 1. Primary "Order Now" Button (اطلب الآن - ينقل فوراً إلى السلة) -->
+                            <button 
+                                @click="addToCart(true)" 
+                                :disabled="loading"
+                                type="button" 
+                                class="w-full bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm md:text-base order-1"
+                                title="طلب الباقة والانتقال فوراً إلى سلة التسوق"
+                            >
+                                <template x-if="!(loading && orderingNow)">
+                                    <span>اطلب الآن</span>
+                                </template>
+                                <template x-if="loading && orderingNow">
+                                    <span class="flex items-center justify-center gap-2">
+                                        <svg class="animate-spin w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span>جاري التحويل...</span>
+                                    </span>
+                                </template>
+                            </button>
 
-                        <!-- 2. Secondary "Add to Cart" Button (أضف إلى السلة) -->
-                        <button 
-                            @click="addToCart(false)" 
-                            :disabled="loading"
-                            type="button" 
-                            class="w-full bg-tertiary-100 hover:bg-secondary/30 active:bg-secondary/40 text-primary border border-secondary/60 hover:border-secondary font-bold py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm md:text-base order-2"
-                            title="إضافة الباقة إلى سلة التسوق ومتابعة التسوق"
-                        >
-                            <template x-if="!(loading && !orderingNow)">
-                                <span class="flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
-                                    <span>أضف إلى السلة</span>
-                                </span>
-                            </template>
-                            <template x-if="loading && !orderingNow">
-                                <span class="flex items-center justify-center gap-2">
-                                    <svg class="animate-spin w-4 h-4 sm:w-5 sm:h-5 text-primary" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>جاري الإضافة...</span>
-                                </span>
-                            </template>
-                        </button>
+                            <!-- 2. Secondary "Add to Cart" Button (أضف إلى السلة) -->
+                            <button 
+                                @click="addToCart(false)" 
+                                :disabled="loading"
+                                type="button" 
+                                class="w-full bg-tertiary-100 hover:bg-secondary/30 active:bg-secondary/40 text-primary border border-secondary/60 hover:border-secondary font-bold py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm md:text-base order-2"
+                                title="إضافة الباقة إلى سلة التسوق ومتابعة التسوق"
+                            >
+                                <template x-if="!(loading && !orderingNow)">
+                                    <span class="flex items-center justify-center gap-2">
+                                        <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                        <span>أضف إلى السلة</span>
+                                    </span>
+                                </template>
+                                <template x-if="loading && !orderingNow">
+                                    <span class="flex items-center justify-center gap-2">
+                                        <svg class="animate-spin w-4 h-4 sm:w-5 sm:h-5 text-primary" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span>جاري الإضافة...</span>
+                                    </span>
+                                </template>
+                            </button>
 
-                    </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Delivery Note Banner Text -->

@@ -73,6 +73,47 @@
             >
                 @csrf
 
+                <!-- Section 0: Store Orders Acceptance Status (نفاد البضاعة) -->
+                <div class="space-y-4 border-b border-neutral-100 pb-6 bg-tertiary-50/60 p-4 sm:p-5 rounded-2xl border">
+                    <div class="flex items-center gap-2 text-primary font-bold">
+                        <span class="text-xl">🏪</span>
+                        <h3 class="font-headline-ar text-lg">
+                            حالة استقبال الطلبات في المتجر (إيقاف الطلبات عند نفاد البضاعة)
+                        </h3>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                            <input 
+                                type="checkbox" 
+                                name="orders_enabled" 
+                                value="1"
+                                {{ (!isset($settings['orders_enabled']) || $settings['orders_enabled']) ? 'checked' : '' }}
+                                class="rounded text-primary focus:ring-primary w-5 h-5 cursor-pointer"
+                            >
+                            <span class="text-xs md:text-sm font-bold text-neutral-800">
+                                استقبال الطلبات مفعل حالياً ✓ (قم بإلغاء التحديد لإيقاف الطلبات فوراً في حال نفدت كل البضاعة)
+                            </span>
+                        </label>
+                        <p class="text-[11px] text-neutral-500 mt-1 ps-7">
+                            عند إيقاف هذا الخيار، سيظهر شريط تنبيه لجميع الزوار بنفاد البضاعة، وسيتم إيقاف زر إتمام الطلب والسلة منعاً لقبول أي طلب جديد.
+                        </p>
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">
+                            رسالة التنبيه التي تظهر للزبائن عند إيقاف الطلبات
+                        </label>
+                        <input 
+                            type="text" 
+                            name="orders_closed_message" 
+                            value="{{ old('orders_closed_message', $settings['orders_closed_message'] ?? 'نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة.') }}" 
+                            class="w-full bg-surface border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
+                            placeholder="نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة."
+                        >
+                    </div>
+                </div>
+
                 <!-- Section 1: Sham Cash Settings -->
                 <div class="space-y-4 border-b border-neutral-100 pb-6">
                     <div class="flex items-center gap-2 text-primary font-bold">

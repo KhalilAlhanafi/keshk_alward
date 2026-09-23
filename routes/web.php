@@ -134,6 +134,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->pref
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
     // Products Management
+    Route::patch('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
 
     // Orders Management
@@ -155,6 +156,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->pref
     // Settings Management
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::post('settings/toggle-orders', [\App\Http\Controllers\Admin\SettingController::class, 'toggleOrders'])->name('settings.toggle-orders');
 });
 
 require __DIR__.'/auth.php';

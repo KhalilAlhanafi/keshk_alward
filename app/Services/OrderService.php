@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Cart;
 use App\Models\DeliveryArea;
 use App\Models\ProductSize;
+use App\Models\Setting;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -49,10 +50,21 @@ class OrderService
      */
     public function placeOrder(Cart $cart, array $data): Order
     {
+        if (!Setting::get('orders_enabled', true)) {
+            throw new \RuntimeException(Setting::get('orders_closed_message', 'نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة.'));
+        }
+
         // Eager load everything needed
         $cart->loadMissing('items.product', 'items.size', 'items.addons.addon');
         if ($cart->items->isEmpty()) {
             throw new \RuntimeException('لا يمكن إتمام طلب بسلة فارغة.');
+        }
+
+        foreach ($cart->items as $item) {
+            if ($item->product && !$item->product->is_active) {
+                $prodName = $item->product?->name ?? $item->product?->name_ar ?? 'المحدد';
+                throw new \RuntimeException("المنتج '{$prodName}' غير متوفر حالياً لنفاد الكمية.");
+            }
         }
 
         // Validate delivery area exists and is active

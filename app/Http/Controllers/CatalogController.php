@@ -119,13 +119,18 @@ class CatalogController extends Controller
      */
     public function show(Request $request, $slug): \Illuminate\Http\JsonResponse|\Illuminate\View\View
     {
-        $product = Product::with(['category', 'sizes', 'addons' => function ($query) {
+        $query = Product::with(['category', 'sizes', 'addons' => function ($query) {
             $query->where('is_active', true);
         }])->where(function($q) use ($slug) {
             $q->where('slug', $slug)->orWhere('id', is_numeric($slug) ? (int)$slug : 0);
-        })
-        ->where('is_active', true)
-        ->firstOrFail();
+        });
+
+        // Allow authenticated admin to preview inactive / hidden products
+        if (!auth()->check() || auth()->user()->role !== 'admin') {
+            $query->where('is_active', true);
+        }
+
+        $product = $query->firstOrFail();
 
         // Related products in same category
         $relatedProducts = Product::where('is_active', true)

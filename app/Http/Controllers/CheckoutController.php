@@ -21,6 +21,10 @@ class CheckoutController extends Controller
      */
     public function show(Request $request): View|\Illuminate\Http\RedirectResponse
     {
+        if (!\App\Models\Setting::get('orders_enabled', true)) {
+            return redirect()->route('cart.index')->with('error', \App\Models\Setting::get('orders_closed_message', 'نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة.'));
+        }
+
         $cart = Cart::where(function($q) {
             if (auth()->check()) {
                 $q->where('user_id', auth()->id());

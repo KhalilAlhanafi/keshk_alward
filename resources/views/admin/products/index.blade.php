@@ -260,6 +260,53 @@
                 } finally {
                     this.deleting = false;
                 }
+            },
+
+            // Storewide Orders acceptance state
+            ordersEnabled: {{ \App\Models\Setting::get('orders_enabled', true) ? 'true' : 'false' }},
+            togglingOrders: false,
+            async toggleStoreOrders() {
+                const prev = this.ordersEnabled;
+                const next = !prev;
+                const promptMsg = next 
+                    ? 'هل أنت متأكد من رغبتك في إعادة تفعيل استقبال الطلبات في المتجر؟'
+                    : 'هل أنت متأكد من إيقاف استقبال الطلبات في كامل المتجر؟ سيتم تنبيه الزبائن بنفاد البضاعة وتعطيل إتمام الطلبات.';
+                
+                if (!confirm(promptMsg)) return;
+
+                this.togglingOrders = true;
+                this.ordersEnabled = next;
+
+                try {
+                    const response = await fetch('{{ route('admin.settings.toggle-orders') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ orders_enabled: next })
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        this.ordersEnabled = data.orders_enabled;
+                        window.dispatchEvent(new CustomEvent('toast', { 
+                            detail: { message: data.message, type: this.ordersEnabled ? 'success' : 'info' } 
+                        }));
+                    } else {
+                        this.ordersEnabled = prev;
+                        window.dispatchEvent(new CustomEvent('toast', { 
+                            detail: { message: data.message || 'تعذر تغيير حالة الطلبات', type: 'error' } 
+                        }));
+                    }
+                } catch (e) {
+                    this.ordersEnabled = prev;
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { message: 'حدث خطأ في الاتصال بالخادم', type: 'error' } 
+                    }));
+                } finally {
+                    this.togglingOrders = false;
+                }
             }
         }"
         class="space-y-6 font-body-ar"
@@ -325,6 +372,67 @@
             </div>
         </div>
 
+        <!-- Store Orders Acceptance Bar (إيقاف الطلبات عند نفاد كامل البضاعة) -->
+        <div 
+            class="rounded-3xl border p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all shadow-xs"
+            :class="ordersEnabled ? 'bg-emerald-50/80 border-emerald-200' : 'bg-rose-50 border-rose-200'"
+        >
+            <div class="flex items-start sm:items-center gap-3.5">
+                <div 
+                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 shadow-xs"
+                    :class="ordersEnabled ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'"
+                >
+                    <span x-text="ordersEnabled ? '🛍️' : '⛔'"></span>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="font-headline-ar font-bold text-sm sm:text-base" :class="ordersEnabled ? 'text-emerald-950' : 'text-rose-950'">
+                            حالة استقبال الطلبات في المتجر:
+                        </h2>
+                        <span 
+                            class="px-3 py-0.5 rounded-full text-xs font-bold font-body"
+                            :class="ordersEnabled ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'"
+                            x-text="ordersEnabled ? 'مفعل (المتجر يستقبل طلبات الزبائن)' : 'متوقف مؤقتاً (نفاد البضاعة)'"
+                        ></span>
+                    </div>
+                    <p class="text-xs mt-1" :class="ordersEnabled ? 'text-emerald-700' : 'text-rose-700'">
+                        <span x-show="ordersEnabled">
+                            المتجر يعمل بصورة طبيعية. في حال نفدت بضاعة المتجر بالكامل، يمكنك إيقاف استقبال الطلبات مباشرة من هذا الزر.
+                        </span>
+                        <span x-show="!ordersEnabled">
+                            تم إيقاف استقبال الطلبات في كامل المتجر. يظهر شريط تنبيه لجميع الزبائن وتم تعطيل إتمام الطلب منعاً لأي حرج.
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Button: Stop / Resume Orders -->
+            <div class="flex-shrink-0 w-full md:w-auto">
+                <button 
+                    type="button" 
+                    @click="toggleStoreOrders()" 
+                    :disabled="togglingOrders"
+                    class="w-full md:w-auto px-5 py-2.5 rounded-2xl font-bold text-xs md:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 min-h-[40px]"
+                    :class="ordersEnabled 
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200' 
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'"
+                >
+                    <span x-show="!togglingOrders && ordersEnabled" class="flex items-center gap-1.5">
+                        <span>⛔</span>
+                        <span>إيقاف استقبال الطلبات (نفاد البضاعة)</span>
+                    </span>
+                    <span x-show="!togglingOrders && !ordersEnabled" class="flex items-center gap-1.5">
+                        <span>✅</span>
+                        <span>استئناف استقبال الطلبات</span>
+                    </span>
+                    <span x-show="togglingOrders" class="flex items-center gap-2">
+                        <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>جاري التحديث...</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
         <!-- Products Table Card -->
         <div class="bg-surface rounded-card p-4 md:p-6 border border-neutral-100 shadow-soft space-y-4">
             <div class="overflow-x-auto">
@@ -341,14 +449,56 @@
                     </thead>
                     <tbody class="divide-y divide-neutral-100">
                         @forelse($products as $prod)
-                            <tr class="hover:bg-tertiary-50/50 transition-colors">
+                            <tr 
+                                class="hover:bg-tertiary-50/50 transition-colors"
+                                x-data="{
+                                    active: {{ $prod->is_active ? 'true' : 'false' }},
+                                    loading: false,
+                                    async toggleStatus() {
+                                        this.loading = true;
+                                        const prev = this.active;
+                                        this.active = !prev;
+
+                                        try {
+                                            const response = await fetch('{{ route('admin.products.toggle-status', $prod->id) }}', {
+                                                method: 'PATCH',
+                                                headers: {
+                                                    'Accept': 'application/json',
+                                                    'Content-Type': 'application/json',
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                                                }
+                                            });
+                                            const data = await response.json();
+                                            if (response.ok && data.success) {
+                                                this.active = data.is_active;
+                                                window.dispatchEvent(new CustomEvent('toast', { 
+                                                    detail: { message: data.message, type: this.active ? 'success' : 'info' } 
+                                                }));
+                                            } else {
+                                                this.active = prev;
+                                                window.dispatchEvent(new CustomEvent('toast', { 
+                                                    detail: { message: data.message || 'تعذر تغيير حالة المنتج', type: 'error' } 
+                                                }));
+                                            }
+                                        } catch (e) {
+                                            this.active = prev;
+                                            window.dispatchEvent(new CustomEvent('toast', { 
+                                                detail: { message: 'حدث خطأ في الاتصال بالخادم', type: 'error' } 
+                                            }));
+                                        } finally {
+                                            this.loading = false;
+                                        }
+                                    }
+                                }"
+                            >
                                 <td class="p-3 font-bold text-primary">
                                     <div class="flex items-center gap-3">
                                         <div class="relative flex-shrink-0">
                                             <img 
                                                 src="{{ $prod->primary_image_url }}" 
                                                 alt="{{ $prod->name }}" 
-                                                class="w-12 h-12 rounded-xl object-cover border border-neutral-100 bg-tertiary-50"
+                                                class="w-12 h-12 rounded-xl object-cover border border-neutral-100 bg-tertiary-50 transition-opacity"
+                                                :class="!active ? 'opacity-50 grayscale' : ''"
                                             >
                                             @if(count($prod->gallery_urls) > 1)
                                                 <span class="absolute -bottom-1 -start-1 bg-primary text-white text-[9px] px-1.5 py-0.2 rounded-full font-body font-bold shadow-xs">
@@ -357,7 +507,7 @@
                                             @endif
                                         </div>
                                         <div class="space-y-0.5">
-                                            <span class="block text-sm text-neutral-900">{{ $prod->name }}</span>
+                                            <span class="block text-sm transition-colors" :class="!active ? 'text-neutral-400 line-through' : 'text-neutral-900'">{{ $prod->name }}</span>
                                             @if($prod->is_best_seller)
                                                 <span class="inline-block text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded-md">
                                                     الأكثر مبيعاً ⭐
@@ -382,18 +532,43 @@
                                     @endif
                                 </td>
                                 <td class="p-3">
-                                    @if($prod->is_active)
-                                        <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-success/10 text-success">
-                                            ✓ معروض بالمتجر
-                                        </span>
-                                    @else
-                                        <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-neutral-100 text-neutral-500">
-                                            معطل
-                                        </span>
-                                    @endif
+                                    <!-- One-Click Instant Visibility Toggle Button (إخفاء / إظهار المنتج عند النفاد) -->
+                                    <button 
+                                        type="button" 
+                                        @click="toggleStatus()" 
+                                        :disabled="loading"
+                                        class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-xs cursor-pointer border select-none disabled:opacity-50"
+                                        :class="active 
+                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300' 
+                                            : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300'"
+                                        :title="active ? 'انقر لإخفاء هذا المنتج من المتجر فوراً عند نفاد الكمية' : 'انقر لإعادة إظهار المنتج في المتجر وتفعيله'"
+                                    >
+                                        <span class="w-2 h-2 rounded-full transition-colors flex-shrink-0"
+                                              :class="active ? 'bg-emerald-500 group-hover:bg-rose-500' : 'bg-rose-500 group-hover:bg-emerald-500'"></span>
+                                        <span x-text="active ? '✓ معروض بالمتجر' : '🚫 مخفي (نفدت الكمية)'"></span>
+                                        
+                                        <!-- Quick action hint on hover -->
+                                        <span class="text-[10px] font-normal underline decoration-dotted opacity-75"
+                                              x-text="active ? '(إخفاء)' : '(إظهار)'"></span>
+                                    </button>
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
+                                        <!-- Quick Hide/Show Toggle Action Button -->
+                                        <button 
+                                            @click="toggleStatus()" 
+                                            :disabled="loading"
+                                            type="button" 
+                                            class="p-2.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl transition-colors cursor-pointer text-xs font-bold"
+                                            :class="active 
+                                                ? 'text-neutral-500 hover:text-rose-600 hover:bg-rose-50' 
+                                                : 'text-rose-600 bg-rose-50 hover:bg-rose-100'"
+                                            :title="active ? 'إخفاء المنتج من المتجر (نفد)' : 'إظهار المنتج في المتجر مجدداً'"
+                                        >
+                                            <span x-show="active">👁️</span>
+                                            <span x-show="!active">🚫</span>
+                                        </button>
+
                                         <!-- Storefront preview -->
                                         <a 
                                             href="{{ route('products.show', $prod->slug ?? $prod->id) }}" 

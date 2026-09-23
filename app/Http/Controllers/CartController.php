@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductSize;
+use App\Models\Setting;
 use App\Services\CartTotalsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -86,6 +87,12 @@ class CartController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        if (!Setting::get('orders_enabled', true)) {
+            return response()->json([
+                'message' => Setting::get('orders_closed_message', 'نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة.')
+            ], 422);
+        }
+
         $request->validate([
             'product_id' => ['required', 'exists:products,id'],
             'quantity' => ['required', 'integer', 'min:1'],
@@ -100,6 +107,12 @@ class CartController extends Controller
         $qty = $request->input('quantity', 1);
 
         $product = Product::with('sizes')->findOrFail($productId);
+
+        if (!$product->is_active) {
+            return response()->json([
+                'message' => 'عذراً، هذا المنتج غير متوفر حالياً لنفاد الكمية.'
+            ], 422);
+        }
 
         if (!$sizeId && $product->sizes->count() > 0) {
             $sizeId = $product->sizes->first()->id;

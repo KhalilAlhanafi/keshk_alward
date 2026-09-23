@@ -222,12 +222,27 @@
                     </div>
 
                     <!-- Checkout CTA Button -->
-                    <a 
-                        href="{{ route('orders.create') }}" 
-                        class="block w-full bg-primary hover:bg-primary-600 text-white font-bold text-center py-3.5 px-4 rounded-2xl shadow-md transition-colors text-base"
-                    >
-                        إتمام الطلب
-                    </a>
+                    @if(\App\Models\Setting::get('orders_enabled', true))
+                        <a 
+                            href="{{ route('orders.create') }}" 
+                            class="block w-full bg-primary hover:bg-primary-600 text-white font-bold text-center py-3.5 px-4 rounded-2xl shadow-md transition-colors text-base"
+                        >
+                            إتمام الطلب
+                        </a>
+                    @else
+                        <div class="space-y-2">
+                            <button 
+                                type="button" 
+                                disabled 
+                                class="block w-full bg-neutral-200 text-neutral-500 font-bold text-center py-3.5 px-4 rounded-2xl cursor-not-allowed text-sm"
+                            >
+                                ⛔ استقبال الطلبات متوقف مؤقتاً
+                            </button>
+                            <p class="text-[11px] text-center text-rose-600 font-medium leading-relaxed">
+                                {{ \App\Models\Setting::get('orders_closed_message', 'نعتذر منكم، تم إيقاف استقبال الطلبات مؤقتاً لنفاد البضاعة.') }}
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Security Trust Badge -->
                     <div class="flex items-center justify-center gap-2 text-xs text-neutral-400 pt-1">
