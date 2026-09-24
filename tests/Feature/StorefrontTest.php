@@ -502,3 +502,33 @@ test('Catalog listing can be filtered and sorted correctly', function () {
         ->assertJsonPath('products.1.id', $p2->id)
         ->assertJsonPath('products.2.id', $p1->id);
 });
+
+test('catalog loads all products without being capped at 48', function () {
+    \Illuminate\Support\Facades\Cache::flush();
+    Product::query()->delete();
+
+    $category = Category::firstOrCreate(['name_ar' => 'تصنيف عام', 'slug' => 'general']);
+
+    // Create 60 active products
+    $products = [];
+    for ($i = 1; $i <= 60; $i++) {
+        $products[] = [
+            'category_id' => $category->id,
+            'name_ar' => "منتج تجريبي {$i}",
+            'slug' => "test-product-{$i}-" . uniqid(),
+            'base_price' => 10000 * $i,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    }
+    Product::insert($products);
+
+    $response = $this->get('/catalog');
+    $response->assertStatus(200);
+
+    // Verify allProducts view variable has all 60 products (not limited to 48)
+    $viewAllProducts = $response->viewData('allProducts');
+    expect($viewAllProducts)->toHaveCount(60);
+});
+

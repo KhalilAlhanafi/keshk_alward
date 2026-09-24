@@ -109,7 +109,7 @@ class CatalogController extends Controller
             ]);
         }
 
-        $allProducts = Product::with(['category', 'sizes'])->where('is_active', true)->orderBy('created_at', 'desc')->limit(48)->get();
+        $allProducts = Product::with(['category', 'sizes'])->where('is_active', true)->orderBy('created_at', 'desc')->get();
 
         return view('catalog.index', compact('products', 'categories', 'params', 'allProducts'));
     }

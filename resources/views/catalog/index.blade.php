@@ -82,6 +82,38 @@
                     return Math.max(1, Math.ceil(this.total / this.perPage));
                 },
 
+                get paginationPages() {
+                    const last = this.lastPage;
+                    if (last <= 7) {
+                        return Array.from({ length: last }, (_, i) => i + 1);
+                    }
+                    const current = this.currentPage;
+                    const delta = 1;
+                    const range = [];
+                    const result = [];
+                    let l;
+
+                    for (let i = 1; i <= last; i++) {
+                        if (i === 1 || i === last || (i >= current - delta && i <= current + delta)) {
+                            range.push(i);
+                        }
+                    }
+
+                    for (let i of range) {
+                        if (l) {
+                            if (i - l === 2) {
+                                result.push(l + 1);
+                            } else if (i - l !== 1) {
+                                result.push('...');
+                            }
+                        }
+                        result.push(i);
+                        l = i;
+                    }
+
+                    return result;
+                },
+
                 selectCategory(catSlug) {
                     if (this.selectedCategory === catSlug) return;
                     this.selectedCategory = catSlug;
@@ -412,13 +444,20 @@
                     </button>
 
                     <!-- Page Numbers -->
-                    <template x-for="p in lastPage" :key="p">
-                        <button 
-                            @click="goToPage(p)" 
-                            class="w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                            :class="p === currentPage ? 'bg-primary text-white shadow-sm' : 'bg-surface border border-neutral-200 text-neutral-700 hover:bg-tertiary-100'"
-                            x-text="p"
-                        ></button>
+                    <template x-for="(p, idx) in paginationPages" :key="idx">
+                        <div>
+                            <template x-if="p === '...'">
+                                <span class="w-8 h-9 flex items-center justify-center text-neutral-400 font-bold select-none text-xs">...</span>
+                            </template>
+                            <template x-if="p !== '...'">
+                                <button 
+                                    @click="goToPage(p)" 
+                                    class="w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer font-body"
+                                    :class="p === currentPage ? 'bg-primary text-white shadow-sm' : 'bg-surface border border-neutral-200 text-neutral-700 hover:bg-tertiary-100'"
+                                    x-text="p"
+                                ></button>
+                            </template>
+                        </div>
                     </template>
 
                     <!-- Next Page Button -->
