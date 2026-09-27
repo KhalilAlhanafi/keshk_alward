@@ -42,7 +42,7 @@
                         if (!this.isPaused) {
                             this.next();
                         }
-                    }, 2000);
+                    }, 3000);
                 },
                 stopAutoplay() {
                     if (this.autoplayTimer) {
@@ -56,7 +56,7 @@
             @mouseleave="isPaused = false"
             @touchstart.passive="isPaused = true"
             @touchend.passive="isPaused = false"
-            class="relative rounded-card md:rounded-3xl overflow-hidden shadow-soft bg-neutral-900 min-h-[380px] md:min-h-[480px] flex items-center select-none group"
+            class="relative rounded-card md:rounded-3xl overflow-hidden shadow-soft bg-neutral-950 w-full h-[220px] sm:h-[300px] md:h-[380px] lg:h-[430px] flex items-center select-none group"
             aria-label="سلايدر العروض والزهور"
         >
             <!-- Slides Container -->
@@ -72,36 +72,46 @@
                     class="absolute inset-0 w-full h-full flex items-center"
                     style="{{ $index === 0 ? '' : 'display: none;' }}"
                 >
-                    <!-- Slide Background Image -->
+                    <!-- Ambient Backdrop to fill any wide screen smoothly without empty borders -->
+                    <div class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+                        <img 
+                            src="{{ $slide->image_url }}"
+                            alt="" 
+                            class="w-full h-full object-cover filter blur-2xl scale-125 opacity-35 brightness-50"
+                            aria-hidden="true"
+                        >
+                    </div>
+
+                    <!-- Slide Background Image (Fitted, Crisp & Un-cropped) -->
                     <img 
                         src="{{ $slide->image_url }}"
                         alt="{{ $slide->title ?? 'كشك الورد - باقات زهور فاخرة' }}" 
-                        class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.80]"
+                        class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85]"
                         loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
                     >
 
                     <!-- Rich Gradient Overlay for High Contrast Text -->
-                    <div class="absolute inset-0 bg-gradient-to-r from-primary-950/85 via-primary-900/50 to-black/25"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-primary-950/85 via-primary-900/40 to-transparent"></div>
 
                     <!-- Slide Content Overlay -->
-                    <div class="relative z-10 p-5 sm:p-8 md:p-14 max-w-2xl text-white space-y-3 sm:space-y-4 font-body-ar">
+                    <div class="relative z-10 p-4 sm:p-7 md:p-12 max-w-xl text-white space-y-1.5 sm:space-y-3 font-body-ar">
                         @if(!empty($slide->title))
-                            <h1 class="font-headline-ar text-2xl sm:text-3xl md:text-5xl font-bold leading-tight drop-shadow-md">
+                            <h1 class="font-headline-ar text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight drop-shadow-md">
                                 {{ $slide->title }}
                             </h1>
                         @endif
 
                         @if(!empty($slide->subtitle))
-                            <p class="text-tertiary-100 text-xs sm:text-sm md:text-base leading-relaxed opacity-95 max-w-xl drop-shadow">
+                            <p class="text-tertiary-100 text-[11px] sm:text-xs md:text-sm lg:text-base leading-relaxed opacity-95 max-w-lg line-clamp-2 sm:line-clamp-3 drop-shadow">
                                 {{ $slide->subtitle }}
                             </p>
                         @endif
 
                         @if($index === 0 && !empty($slide->button_text))
-                            <div class="pt-2 sm:pt-3">
+                            <div class="pt-1.5 sm:pt-3">
                                 <a 
                                     href="{{ $slide->button_link ?: route('catalog.index') }}" 
-                                    class="inline-flex items-center gap-2 bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all hover:gap-3 cursor-pointer text-xs sm:text-sm md:text-base"
+                                    class="inline-flex items-center gap-2 bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-bold px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl shadow-lg transition-all hover:gap-3 cursor-pointer text-xs sm:text-sm md:text-base"
                                 >
                                     <span>{{ $slide->button_text }}</span>
                                     <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,34 +125,8 @@
             @endforeach
 
             @if($slidesList->count() > 1)
-                <!-- Prev Button (Right in RTL) -->
-                <button 
-                    @click="prev()" 
-                    type="button" 
-                    class="absolute start-3 sm:start-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer shadow-md"
-                    title="السابق"
-                    aria-label="الشريحة السابقة"
-                >
-                    <svg class="w-5 h-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-
-                <!-- Next Button (Left in RTL) -->
-                <button 
-                    @click="next()" 
-                    type="button" 
-                    class="absolute end-3 sm:end-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer shadow-md"
-                    title="التالي"
-                    aria-label="الشريحة التالية"
-                >
-                    <svg class="w-5 h-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-
-                <!-- Dots Pagination Indicator -->
-                <div class="absolute bottom-4 sm:bottom-6 start-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/35 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/10">
+                <!-- Dots Pagination Indicator (Arrows removed as requested) -->
+                <div class="absolute bottom-3 sm:bottom-5 start-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/35 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/10">
                     @foreach($slidesList as $index => $slide)
                         <button 
                             @click="goTo({{ $index }})" 

@@ -284,7 +284,7 @@
                     <span>•</span>
                     <span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
                         <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        تقليب تلقائي كل ثانيتين (2s)
+                        تقليب تلقائي كل 3 ثواني (3s)
                     </span>
                     <span>•</span>
                     <span class="text-neutral-400 text-[11px]">
@@ -329,14 +329,20 @@
                     class="bg-surface rounded-card border {{ $isFirst ? 'border-primary/40 ring-2 ring-primary/10' : 'border-neutral-100' }} shadow-soft overflow-hidden flex flex-col justify-between transition-all hover:shadow-md"
                 >
                     <!-- Preview Banner Card -->
-                    <div class="relative h-56 sm:h-64 overflow-hidden bg-neutral-900 flex items-center">
+                    <div class="relative h-52 sm:h-60 overflow-hidden bg-neutral-950 flex items-center">
+                        <img 
+                            src="{{ $slide->image_url }}" 
+                            alt="" 
+                            class="w-full h-full object-cover filter blur-xl scale-125 opacity-30 brightness-50"
+                            aria-hidden="true"
+                        >
                         <img 
                             src="{{ $slide->image_url }}" 
                             alt="{{ $slide->title ?? 'شريحة' }}" 
-                            class="absolute inset-0 w-full h-full object-cover filter brightness-[0.78]"
+                            class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.80]"
                         >
                         <!-- Gradient Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-r from-primary-950/85 via-primary-900/50 to-transparent"></div>
+                        <div class="absolute inset-0 bg-gradient-to-r from-primary-950/85 via-primary-900/40 to-transparent"></div>
 
                         <!-- Badges: Order, Primary, Status -->
                         <div class="absolute top-3 start-3 z-10 flex flex-wrap items-center gap-2">
