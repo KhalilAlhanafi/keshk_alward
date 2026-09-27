@@ -211,13 +211,28 @@
                     </div>
 
                     <div>
+                        <label class="block text-xs font-bold text-neutral-700 mb-1">رقم الهاتف للتواصل (صفحة اتصل بنا)</label>
+                        <input 
+                            type="text" 
+                            name="store_phone" 
+                            value="{{ old('store_phone', $settings['store_phone'] ?? '+963 946 441 203') }}" 
+                            dir="ltr"
+                            placeholder="+963 946 441 203"
+                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
+                        >
+                        <p class="text-[11px] text-neutral-400 mt-1">
+                            يظهر كرقم رئيسي للمتجر في صفحة اتصل بنا.
+                        </p>
+                    </div>
+
+                    <div class="pt-2">
                         <label class="block text-xs font-bold text-neutral-700 mb-1">رقم الواتساب بالصيغة الدولية</label>
                         <input 
                             type="text" 
                             name="whatsapp_number" 
-                            value="{{ old('whatsapp_number', $settings['whatsapp_number'] ?? '963932534193') }}" 
+                            value="{{ old('whatsapp_number', $settings['whatsapp_number'] ?? '963946441203') }}" 
                             dir="ltr"
-                            placeholder="963932534193"
+                            placeholder="963946441203"
                             class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
                         >
                         <p class="text-[11px] text-neutral-400 mt-1">

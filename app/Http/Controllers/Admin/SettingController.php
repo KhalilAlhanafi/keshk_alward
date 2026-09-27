@@ -42,6 +42,7 @@ class SettingController extends Controller
             'promo_banner_title' => ['nullable', 'string', 'max:500'],
             'promo_banner_text' => ['nullable', 'string', 'max:1000'],
             'whatsapp_number' => ['nullable', 'string', 'max:100'],
+            'store_phone' => ['nullable', 'string', 'max:100'],
             'facebook_url' => ['nullable', 'string', 'max:500'],
             'instagram_url' => ['nullable', 'string', 'max:500'],
             'sham_cash_wallet_code' => ['nullable', 'string', 'max:100'],

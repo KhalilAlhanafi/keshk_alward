@@ -1,5 +1,5 @@
 @props([
-    'phone' => \App\Models\Setting::get('whatsapp_number', '963932534193'),
+    'phone' => \App\Models\Setting::get('whatsapp_number', '963946441203'),
     'message' => 'مرحبا كشك الورد ، هل يمكنني الاستفسار او طلب شيء غير موجود على الموقع'
 ])
 
