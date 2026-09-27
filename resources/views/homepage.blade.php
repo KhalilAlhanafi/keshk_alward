@@ -24,6 +24,11 @@
                 totalSlides: {{ $slidesList->count() }},
                 autoplayTimer: null,
                 isPaused: false,
+                touchStartX: 0,
+                touchStartY: 0,
+                dragStartX: 0,
+                isDragging: false,
+                swipeThreshold: 50,
                 next() {
                     if (this.totalSlides <= 1) return;
                     this.activeSlide = (this.activeSlide + 1) % this.totalSlides;
@@ -49,14 +54,49 @@
                         clearInterval(this.autoplayTimer);
                         this.autoplayTimer = null;
                     }
+                },
+                handleTouchStart(e) {
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                    this.isPaused = true;
+                },
+                handleTouchEnd(e) {
+                    const dx = e.changedTouches[0].clientX - this.touchStartX;
+                    const dy = e.changedTouches[0].clientY - this.touchStartY;
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > this.swipeThreshold) {
+                        // RTL: swipe left (negative dx) = next slide, swipe right (positive dx) = prev slide
+                        if (dx < 0) { this.next(); } else { this.prev(); }
+                        this.stopAutoplay();
+                        this.startAutoplay();
+                    }
+                    this.isPaused = false;
+                },
+                handleMouseDown(e) {
+                    this.dragStartX = e.clientX;
+                    this.isDragging = true;
+                    this.isPaused = true;
+                },
+                handleMouseUp(e) {
+                    if (!this.isDragging) return;
+                    this.isDragging = false;
+                    const dx = e.clientX - this.dragStartX;
+                    if (Math.abs(dx) > this.swipeThreshold) {
+                        if (dx < 0) { this.next(); } else { this.prev(); }
+                        this.stopAutoplay();
+                        this.startAutoplay();
+                    }
+                    this.isPaused = false;
                 }
             }"
             x-init="startAutoplay()"
             @mouseenter="isPaused = true"
-            @mouseleave="isPaused = false"
-            @touchstart.passive="isPaused = true"
-            @touchend.passive="isPaused = false"
-            class="relative rounded-card md:rounded-3xl overflow-hidden shadow-soft bg-neutral-950 w-full h-[260px] sm:h-[380px] md:h-[480px] lg:h-[560px] xl:h-[640px] flex items-center select-none group"
+            @mouseleave="isPaused = false; isDragging = false"
+            @touchstart.passive="handleTouchStart($event)"
+            @touchend.passive="handleTouchEnd($event)"
+            @mousedown="handleMouseDown($event)"
+            @mouseup="handleMouseUp($event)"
+            @mouseleave="handleMouseUp($event)"
+            class="relative rounded-card md:rounded-3xl overflow-hidden shadow-soft bg-neutral-950 w-full h-[220px] sm:h-[300px] md:h-[380px] lg:h-[430px] flex items-center select-none group"
             aria-label="سلايدر العروض والزهور"
         >
             <!-- Slides Container -->
@@ -86,7 +126,7 @@
                     <img 
                         src="{{ $slide->image_url }}"
                         alt="{{ $slide->title ?? 'كشك الورد - باقات زهور فاخرة' }}" 
-                        class="absolute inset-0 w-full h-full object-contain object-center filter brightness-[0.92]"
+                        class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85]"
                         loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
                     >
 
