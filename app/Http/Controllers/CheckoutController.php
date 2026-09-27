@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Services\CartTotalsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -26,8 +27,8 @@ class CheckoutController extends Controller
         }
 
         $cart = Cart::where(function($q) {
-            if (auth()->check()) {
-                $q->where('user_id', auth()->id());
+            if (Auth::check()) {
+                $q->where('user_id', Auth::id());
             } else {
                 $q->where('session_token', request()->cookie('session_token'));
             }

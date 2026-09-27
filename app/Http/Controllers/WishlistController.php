@@ -6,6 +6,7 @@ use App\Models\Wishlist;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class WishlistController extends Controller
@@ -15,8 +16,8 @@ class WishlistController extends Controller
      */
     private function getIdentifier(Request $request): array
     {
-        if (auth()->check()) {
-            return ['user_id' => auth()->id()];
+        if (Auth::check()) {
+            return ['user_id' => Auth::id()];
         }
 
         $sessionToken = $request->cookie('session_token');

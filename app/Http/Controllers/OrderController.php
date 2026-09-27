@@ -11,6 +11,8 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -30,8 +32,8 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         $cart = Cart::where(function($q) use ($request) {
-            if (auth()->check()) {
-                $q->where('user_id', auth()->id());
+            if (Auth::check()) {
+                $q->where('user_id', Auth::id());
             } else {
                 $q->where('session_token', $request->cookie('session_token'));
             }
@@ -47,7 +49,7 @@ class OrderController extends Controller
             $order = $this->orderService->placeOrder($cart, $request->validated());
         } catch (\Exception $e) {
             // General catch-all for any DB errors or unknown exceptions to prevent 500 HTML response
-            \Log::error('Order placement exception in controller: ' . $e->getMessage());
+            Log::error('Order placement exception in controller: ' . $e->getMessage());
             $userMsg = $e instanceof \RuntimeException ? $e->getMessage() : 'عذراً، حدث خطأ أثناء معالجة الطلب. يرجى المحاولة لاحقاً.';
             return response()->json(['message' => $userMsg, 'error_debug' => $e->getMessage()], 422);
         }
@@ -71,7 +73,7 @@ class OrderController extends Controller
     public function show(Order $order): View
     {
         // Policy: user can only see their own orders
-        abort_if(auth()->id() !== $order->user_id, 403);
+        abort_if(Auth::id() !== $order->user_id, 403);
 
         $order->load(['items.addons', 'deliveryArea', 'transactions']);
 
@@ -89,7 +91,7 @@ class OrderController extends Controller
     public function uploadPaymentProof(Request $request, Order $order): JsonResponse
     {
         // Policy: user can only upload proof for their own orders
-        abort_if(auth()->id() !== $order->user_id, 403);
+        abort_if(Auth::id() !== $order->user_id, 403);
 
         $paymentMethodValue = $order->payment_method instanceof \BackedEnum ? $order->payment_method->value : (string) $order->payment_method;
         $paymentStatusValue = $order->payment_status instanceof \BackedEnum ? $order->payment_status->value : (string) $order->payment_status;
@@ -165,7 +167,7 @@ class OrderController extends Controller
             try {
                 app(\App\Services\TelegramNotifierService::class)->sendPaymentProofUploadedAlert($order);
             } catch (\Throwable $te) {
-                \Log::warning('Failed sending telegram proof alert: ' . $te->getMessage());
+                Log::warning('Failed sending telegram proof alert: ' . $te->getMessage());
             }
 
             return response()->json([
@@ -174,7 +176,7 @@ class OrderController extends Controller
                 'transaction_number' => $order->transaction_number,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Upload Proof Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            Log::error('Upload Proof Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             return response()->json([
                 'message' => 'حدث خطأ أثناء رفع إثبات الدفع.',
                 'error_debug' => $e->getMessage(),
@@ -188,7 +190,7 @@ class OrderController extends Controller
     public function cancel(Order $order, \App\Services\TelegramNotifierService $telegram): RedirectResponse
     {
         // Policy: user can only cancel their own orders
-        abort_if(auth()->id() !== $order->user_id, 403);
+        abort_if(Auth::id() !== $order->user_id, 403);
 
         if ($order->status === \App\Enums\OrderStatus::PENDING) {
             $order->status = \App\Enums\OrderStatus::CANCELLED;
