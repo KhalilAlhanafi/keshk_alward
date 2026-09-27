@@ -136,6 +136,14 @@
                 </a>
 
                 <a 
+                    href="{{ route('admin.hero-slides.index') }}" 
+                    class="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs md:text-sm transition-all {{ request()->routeIs('admin.hero-slides*') ? 'bg-primary text-white shadow-xs' : 'text-neutral-700 hover:bg-tertiary-100' }}"
+                >
+                    <span>🖼️</span>
+                    <span>سلايدر الرئيسية</span>
+                </a>
+
+                <a 
                     href="{{ route('admin.settings.index') }}" 
                     class="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs md:text-sm transition-all {{ request()->routeIs('admin.settings*') ? 'bg-primary text-white shadow-xs' : 'text-neutral-700 hover:bg-tertiary-100' }}"
                 >

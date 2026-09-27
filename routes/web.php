@@ -157,6 +157,10 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->pref
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
     Route::post('settings/toggle-orders', [\App\Http\Controllers\Admin\SettingController::class, 'toggleOrders'])->name('settings.toggle-orders');
+
+    // Hero Slides Management (Carousel)
+    Route::patch('hero-slides/{hero_slide}/toggle-status', [\App\Http\Controllers\Admin\HeroSlideController::class, 'toggleStatus'])->name('hero-slides.toggle-status');
+    Route::resource('hero-slides', \App\Http\Controllers\Admin\HeroSlideController::class);
 });
 
 require __DIR__.'/auth.php';

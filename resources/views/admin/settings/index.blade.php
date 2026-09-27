@@ -274,9 +274,27 @@
                         </h3>
                     </div>
 
+                    <!-- Banner to Carousel Slider Manager -->
+                    <div class="p-3.5 bg-tertiary-100/80 border border-primary/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 my-2">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-2xl">🖼️</span>
+                            <div>
+                                <h4 class="text-xs md:text-sm font-bold text-primary">سلايدر الصفحة الرئيسية (Carousel)</h4>
+                                <p class="text-[11px] text-neutral-600">يمكنك إضافة عدة صور مع كلام خاص بكل صورة وتقليبها تلقائياً كل ثانيتين.</p>
+                            </div>
+                        </div>
+                        <a 
+                            href="{{ route('admin.hero-slides.index') }}" 
+                            class="inline-flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-xs flex-shrink-0"
+                        >
+                            <span>إدارة السلايدر والصور</span>
+                            <span class="rtl:rotate-180">←</span>
+                        </a>
+                    </div>
+
                     <div class="pt-2 mb-4">
                         <label class="block text-xs font-bold text-neutral-700 mb-1">
-                            الصورة الكبيرة (Hero Image)
+                            الصورة الكبيرة البديلة (Hero Image Fallback)
                         </label>
                         <input 
                             type="file" 

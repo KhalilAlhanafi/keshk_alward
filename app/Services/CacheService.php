@@ -32,6 +32,7 @@ class CacheService
     public const TTL_CATEGORIES = 24 * 60 * 60;  // 24 hours
     public const TTL_DASHBOARD = 5 * 60;         // 5 minutes
     public const TTL_SETTINGS = 60 * 60;         // 1 hour
+    public const TTL_HERO_SLIDES = 24 * 60 * 60;  // 24 hours
 
     // ── Static key names ────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ class CacheService
     public const KEY_BEST_SELLERS = 'best_sellers';
     public const KEY_DASHBOARD_STATS = 'admin_dashboard_stats';
     public const KEY_SETTINGS_ALL = 'settings_all';
+    public const KEY_HERO_SLIDES_ACTIVE = 'hero_slides_active';
 
     /**
      * Build a stable, deterministic catalog cache key from request parameters.
@@ -115,5 +117,13 @@ class CacheService
         Cache::forget(self::KEY_CATEGORIES_ACTIVE);
         Cache::forget(self::KEY_CATEGORIES_ALL);
         Cache::forget(self::KEY_DASHBOARD_STATS);
+    }
+
+    /**
+     * Flush active hero slides cache.
+     */
+    public static function flushHeroSlideCaches(): void
+    {
+        Cache::forget(self::KEY_HERO_SLIDES_ACTIVE);
     }
 }

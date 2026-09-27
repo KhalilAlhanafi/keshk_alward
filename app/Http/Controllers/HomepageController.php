@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\HeroSlide;
 use App\Models\Product;
 use App\Services\CacheService;
 use App\Services\ImageService;
@@ -13,6 +14,16 @@ class HomepageController extends Controller
 {
     public function __invoke(ImageService $imageService): \Illuminate\View\View
     {
+        // Active hero slides — cached for 24 hours (busted by HeroSlide observer via CacheService)
+        try {
+            $heroSlides = Cache::remember(CacheService::KEY_HERO_SLIDES_ACTIVE, CacheService::TTL_HERO_SLIDES, function () {
+                return HeroSlide::active()->get();
+            });
+        } catch (\Throwable $e) {
+            Log::warning('HomepageController: Cache failed for hero_slides, falling back to DB.', ['error' => $e->getMessage()]);
+            $heroSlides = HeroSlide::active()->get();
+        }
+
         // Best sellers — cached for 1 hour (busted by Product observer via CacheService)
         try {
             $bestSellers = Cache::remember(CacheService::KEY_BEST_SELLERS, CacheService::TTL_BEST_SELLERS, function () {
@@ -51,6 +62,6 @@ class HomepageController extends Controller
                 ->get();
         }
 
-        return view('homepage', compact('bestSellers', 'categories'));
+        return view('homepage', compact('bestSellers', 'categories', 'heroSlides'));
     }
 }

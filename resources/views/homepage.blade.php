@@ -1,46 +1,166 @@
 <x-app-layout>
     <div class="space-y-12 md:space-y-16">
 
-        <!-- 1. Hero Section -->
-        <section class="relative rounded-card overflow-hidden shadow-soft bg-tertiary-100 min-h-[380px] md:min-h-[480px] flex items-center">
-            <!-- Hero Background Image -->
+        <!-- 1. Hero Section (Carousel Slider) -->
         @php
-            $heroImg = \App\Models\Setting::get('home_hero_image');
-            $heroSrc = $heroImg
-                ? (str_starts_with($heroImg, 'data:') || str_starts_with($heroImg, 'http')
-                    ? $heroImg
-                    : asset('storage/' . ltrim($heroImg, '/')))
-                : 'https://images.unsplash.com/photo-1487530811015-780930f87e8f?auto=format&fit=crop&w=1600&q=80';
+            if (!isset($heroSlides) || $heroSlides->isEmpty()) {
+                $heroImg = \App\Models\Setting::get('home_hero_image');
+                $heroSrc = $heroImg
+                    ? (str_starts_with($heroImg, 'data:') || str_starts_with($heroImg, 'http')
+                        ? $heroImg
+                        : asset('storage/' . ltrim($heroImg, '/')))
+                    : 'https://images.unsplash.com/photo-1487530811015-780930f87e8f?auto=format&fit=crop&w=1600&q=80';
+
+                $slidesList = collect([
+                    (object)[
+                        'image_url' => $heroSrc,
+                        'title' => \App\Models\Setting::get('home_hero_title', 'جمال يزهر في كل مناسبة'),
+                        'subtitle' => \App\Models\Setting::get('home_hero_subtitle', 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.'),
+                        'button_text' => 'تسوق الآن',
+                        'button_link' => route('catalog.index'),
+                    ]
+                ]);
+            } else {
+                $slidesList = $heroSlides;
+            }
         @endphp
-        <img 
-            src="{{ $heroSrc }}"
-                alt="كشك الورد - باقات زهور فاخرة" 
-                class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85]"
-            >
 
-            <!-- Gradient Overlay for Contrast -->
-            <div class="absolute inset-0 bg-gradient-to-r from-primary-950/70 via-primary-900/40 to-transparent"></div>
-
-            <!-- Content Overlay -->
-            <div class="relative z-10 p-4 sm:p-6 md:p-12 max-w-xl text-white space-y-4 font-body-ar">
-                <h1 class="font-headline-ar text-2xl sm:text-3xl md:text-5xl font-bold leading-tight">
-                    {{ \App\Models\Setting::get('home_hero_title', 'جمال يزهر في كل مناسبة') }}
-                </h1>
-                <p class="text-tertiary-100 text-sm md:text-base leading-relaxed opacity-95">
-                    {{ \App\Models\Setting::get('home_hero_subtitle', 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.') }}
-                </p>
-                <div class="pt-2">
-                    <a 
-                        href="{{ route('catalog.index') }}" 
-                        class="inline-flex items-center gap-2 bg-primary hover:bg-primary-600 text-white font-bold px-6 py-3 rounded-2xl shadow-md transition-all hover:gap-3"
+        <section 
+            x-data="{
+                activeSlide: 0,
+                totalSlides: {{ $slidesList->count() }},
+                autoplayTimer: null,
+                isPaused: false,
+                next() {
+                    if (this.totalSlides <= 1) return;
+                    this.activeSlide = (this.activeSlide + 1) % this.totalSlides;
+                },
+                prev() {
+                    if (this.totalSlides <= 1) return;
+                    this.activeSlide = (this.activeSlide - 1 + this.totalSlides) % this.totalSlides;
+                },
+                goTo(index) {
+                    this.activeSlide = index;
+                },
+                startAutoplay() {
+                    if (this.totalSlides <= 1) return;
+                    this.stopAutoplay();
+                    this.autoplayTimer = setInterval(() => {
+                        if (!this.isPaused) {
+                            this.next();
+                        }
+                    }, 2000);
+                },
+                stopAutoplay() {
+                    if (this.autoplayTimer) {
+                        clearInterval(this.autoplayTimer);
+                        this.autoplayTimer = null;
+                    }
+                }
+            }"
+            x-init="startAutoplay()"
+            @mouseenter="isPaused = true"
+            @mouseleave="isPaused = false"
+            @touchstart.passive="isPaused = true"
+            @touchend.passive="isPaused = false"
+            class="relative rounded-card md:rounded-3xl overflow-hidden shadow-soft bg-neutral-900 min-h-[380px] md:min-h-[480px] flex items-center select-none group"
+            aria-label="سلايدر العروض والزهور"
+        >
+            <!-- Slides Container -->
+            @foreach($slidesList as $index => $slide)
+                <div 
+                    x-show="activeSlide === {{ $index }}"
+                    x-transition:enter="transition-opacity duration-700 ease-out"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition-opacity duration-500 ease-in"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="absolute inset-0 w-full h-full flex items-center"
+                    style="{{ $index === 0 ? '' : 'display: none;' }}"
+                >
+                    <!-- Slide Background Image -->
+                    <img 
+                        src="{{ $slide->image_url }}"
+                        alt="{{ $slide->title ?? 'كشك الورد - باقات زهور فاخرة' }}" 
+                        class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.80]"
+                        loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
                     >
-                        <span>تسوق الآن</span>
-                        <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </a>
+
+                    <!-- Rich Gradient Overlay for High Contrast Text -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-primary-950/85 via-primary-900/50 to-black/25"></div>
+
+                    <!-- Slide Content Overlay -->
+                    <div class="relative z-10 p-5 sm:p-8 md:p-14 max-w-2xl text-white space-y-3 sm:space-y-4 font-body-ar">
+                        @if(!empty($slide->title))
+                            <h1 class="font-headline-ar text-2xl sm:text-3xl md:text-5xl font-bold leading-tight drop-shadow-md">
+                                {{ $slide->title }}
+                            </h1>
+                        @endif
+
+                        @if(!empty($slide->subtitle))
+                            <p class="text-tertiary-100 text-xs sm:text-sm md:text-base leading-relaxed opacity-95 max-w-xl drop-shadow">
+                                {{ $slide->subtitle }}
+                            </p>
+                        @endif
+
+                        @if(!empty($slide->button_text))
+                            <div class="pt-2 sm:pt-3">
+                                <a 
+                                    href="{{ $slide->button_link ?: route('catalog.index') }}" 
+                                    class="inline-flex items-center gap-2 bg-primary hover:bg-primary-600 active:bg-primary-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all hover:gap-3 cursor-pointer text-xs sm:text-sm md:text-base"
+                                >
+                                    <span>{{ $slide->button_text }}</span>
+                                    <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                    </svg>
+                                </a>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-            </div>
+            @endforeach
+
+            @if($slidesList->count() > 1)
+                <!-- Prev Button (Right in RTL) -->
+                <button 
+                    @click="prev()" 
+                    type="button" 
+                    class="absolute start-3 sm:start-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer shadow-md"
+                    title="السابق"
+                    aria-label="الشريحة السابقة"
+                >
+                    <svg class="w-5 h-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <!-- Next Button (Left in RTL) -->
+                <button 
+                    @click="next()" 
+                    type="button" 
+                    class="absolute end-3 sm:end-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer shadow-md"
+                    title="التالي"
+                    aria-label="الشريحة التالية"
+                >
+                    <svg class="w-5 h-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+
+                <!-- Dots Pagination Indicator -->
+                <div class="absolute bottom-4 sm:bottom-6 start-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/35 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/10">
+                    @foreach($slidesList as $index => $slide)
+                        <button 
+                            @click="goTo({{ $index }})" 
+                            type="button" 
+                            class="h-2 rounded-full transition-all duration-300 cursor-pointer"
+                            :class="activeSlide === {{ $index }} ? 'w-6 bg-white shadow-xs' : 'w-2 bg-white/40 hover:bg-white/70'"
+                            aria-label="انتقل إلى الشريحة {{ $index + 1 }}"
+                        ></button>
+                    @endforeach
+                </div>
+            @endif
         </section>
 
         <!-- Instagram Promo Banner -->
