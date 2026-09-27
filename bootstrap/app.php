@@ -15,6 +15,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'session_token',
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'cart',
+            'cart/*',
+            'wishlist/toggle',
+        ]);
+
+        $middleware->web(prepend: [
+            \App\Http\Middleware\EnsureSessionToken::class,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\TrackSiteVisits::class,
             \App\Http\Middleware\SecurityHeaders::class,

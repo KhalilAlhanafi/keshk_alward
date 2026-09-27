@@ -127,6 +127,35 @@ test('authenticated user can add item to cart', function () {
     $response->assertJsonPath('items.0.quantity', 1);
 });
 
+test('guest user without cookie can add item to cart and retrieve cart', function () {
+    [$product, $size] = makeProductWithSize('rose-guest', 60000);
+
+    $response = $this->postJson('/cart', [
+        'product_id' => $product->id,
+        'product_size_id' => $size->id,
+        'quantity' => 1,
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJsonPath('cart_count', 1);
+    $response->assertJsonPath('items.0.product_id', $product->id);
+    $response->assertCookie('session_token');
+
+    $sessionToken = $response->getCookie('session_token', false)->getValue();
+
+    // Verify GET /cart with this session_token retrieves the exact same item
+    $cartResponse = $this->withUnencryptedCookie('session_token', $sessionToken)->get('/cart');
+    $cartResponse->assertStatus(200);
+    $cartResponse->assertSee($product->name_ar);
+});
+
+test('new visitor on GET / automatically receives session_token cookie', function () {
+    $response = $this->get('/');
+    $response->assertStatus(200);
+    $response->assertCookie('session_token');
+});
+
+
 test('user can add item to cart with selected wrapping color and place order', function () {
     [$product, $size] = makeProductWithSize('rose-gold-wrap', 75000);
     $user = makeUser('+963977888888');

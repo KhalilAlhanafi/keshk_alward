@@ -34,6 +34,7 @@ class CartController extends Controller
         $sessionToken = $request->cookie('session_token');
         if (!$sessionToken) {
             $sessionToken = Str::random(40);
+            $request->cookies->set('session_token', $sessionToken);
             // Queue session token cookie for 30 days
             cookie()->queue('session_token', $sessionToken, 60 * 24 * 30);
         }

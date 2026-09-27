@@ -9,8 +9,8 @@
         'formatted_delivery_fee' => '0 ل.س',
         'formatted_total' => '0 ل.س',
     ];
-    $jsonTotals = json_encode($totals ?? $defaultTotals);
-    $jsonItems = json_encode($items ?? []);
+    $jsonTotals = json_encode($totals ?? $defaultTotals, JSON_UNESCAPED_UNICODE);
+    $jsonItems = json_encode($items ?? [], JSON_UNESCAPED_UNICODE);
 @endphp
 
 <x-app-layout>
@@ -40,7 +40,7 @@
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
                             },
                             body: JSON.stringify({ quantity: newQty })
                         });
@@ -84,7 +84,7 @@
                             method: 'DELETE',
                             headers: {
                                 'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
                             }
                         });
 
