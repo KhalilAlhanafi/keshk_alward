@@ -43,16 +43,24 @@
                 @enderror
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-neutral-700 mb-1">نص الزر</label>
-                    <input type="text" name="button_text" value="{{ old('button_text', $heroSlide->button_text) }}" class="w-full bg-tertiary-50 border border-neutral-200 rounded-2xl px-4 py-2 text-xs md:text-sm">
+            @if($isFirst ?? false)
+                <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-1.5 text-amber-800 text-xs font-bold">
+                        <span>⭐</span>
+                        <span>الزر التفاعلي (خاص بالشريحة الأولى فقط)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-neutral-700 mb-1">نص الزر</label>
+                            <input type="text" name="button_text" value="{{ old('button_text', $heroSlide->button_text) }}" class="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs md:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-neutral-700 mb-1">رابط الزر</label>
+                            <input type="text" name="button_link" value="{{ old('button_link', $heroSlide->button_link) }}" class="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs md:text-sm">
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-neutral-700 mb-1">رابط الزر</label>
-                    <input type="text" name="button_link" value="{{ old('button_link', $heroSlide->button_link) }}" class="w-full bg-tertiary-50 border border-neutral-200 rounded-2xl px-4 py-2 text-xs md:text-sm">
-                </div>
-            </div>
+            @endif
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>

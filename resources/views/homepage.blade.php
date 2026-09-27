@@ -4,18 +4,11 @@
         <!-- 1. Hero Section (Carousel Slider) -->
         @php
             if (!isset($heroSlides) || $heroSlides->isEmpty()) {
-                $heroImg = \App\Models\Setting::get('home_hero_image');
-                $heroSrc = $heroImg
-                    ? (str_starts_with($heroImg, 'data:') || str_starts_with($heroImg, 'http')
-                        ? $heroImg
-                        : asset('storage/' . ltrim($heroImg, '/')))
-                    : 'https://images.unsplash.com/photo-1487530811015-780930f87e8f?auto=format&fit=crop&w=1600&q=80';
-
                 $slidesList = collect([
                     (object)[
-                        'image_url' => $heroSrc,
-                        'title' => \App\Models\Setting::get('home_hero_title', 'جمال يزهر في كل مناسبة'),
-                        'subtitle' => \App\Models\Setting::get('home_hero_subtitle', 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.'),
+                        'image_url' => 'https://images.unsplash.com/photo-1487530811015-780930f87e8f?auto=format&fit=crop&w=1600&q=80',
+                        'title' => 'جمال يزهر في كل مناسبة',
+                        'subtitle' => 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.',
                         'button_text' => 'تسوق الآن',
                         'button_link' => route('catalog.index'),
                     ]
@@ -104,7 +97,7 @@
                             </p>
                         @endif
 
-                        @if(!empty($slide->button_text))
+                        @if($index === 0 && !empty($slide->button_text))
                             <div class="pt-2 sm:pt-3">
                                 <a 
                                     href="{{ $slide->button_link ?: route('catalog.index') }}" 

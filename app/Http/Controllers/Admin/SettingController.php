@@ -35,9 +35,6 @@ class SettingController extends Controller
         Gate::authorize('update', Setting::class);
 
         $rules = [
-            'home_hero_title' => ['nullable', 'string', 'max:500'],
-            'home_hero_subtitle' => ['nullable', 'string', 'max:1000'],
-            'home_hero_image' => ['nullable', 'image', 'max:25600'],
             'promo_banner_badge' => ['nullable', 'string', 'max:255'],
             'promo_banner_title' => ['nullable', 'string', 'max:500'],
             'promo_banner_text' => ['nullable', 'string', 'max:1000'],

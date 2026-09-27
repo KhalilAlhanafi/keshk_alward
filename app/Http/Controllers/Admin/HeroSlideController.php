@@ -67,8 +67,6 @@ class HeroSlideController extends Controller
             'image_url' => ['required_without:image', 'nullable', 'string', 'max:2000'],
             'title' => ['nullable', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:1000'],
-            'button_text' => ['nullable', 'string', 'max:100'],
-            'button_link' => ['nullable', 'string', 'max:500'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -80,12 +78,13 @@ class HeroSlideController extends Controller
             $imagePath = $request->input('image_url');
         }
 
+        // New slides do not have buttons; button exists only on the first slide
         $slide = HeroSlide::create([
             'image_path' => $imagePath,
             'title' => $request->input('title'),
             'subtitle' => $request->input('subtitle'),
-            'button_text' => $request->input('button_text', 'تسوق الآن'),
-            'button_link' => $request->input('button_link', '/catalog'),
+            'button_text' => null,
+            'button_link' => null,
             'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->boolean('is_active', true),
         ]);
@@ -105,7 +104,10 @@ class HeroSlideController extends Controller
      */
     public function edit(HeroSlide $heroSlide): View
     {
-        return view('admin.hero-slides.edit', compact('heroSlide'));
+        $firstSlide = HeroSlide::orderBy('sort_order', 'asc')->orderBy('id', 'asc')->first();
+        $isFirst = ($firstSlide && $firstSlide->id === $heroSlide->id);
+
+        return view('admin.hero-slides.edit', compact('heroSlide', 'isFirst'));
     }
 
     /**
@@ -113,16 +115,24 @@ class HeroSlideController extends Controller
      */
     public function update(Request $request, HeroSlide $heroSlide): RedirectResponse|JsonResponse
     {
-        $request->validate([
+        $firstSlide = HeroSlide::orderBy('sort_order', 'asc')->orderBy('id', 'asc')->first();
+        $isFirst = ($firstSlide && $firstSlide->id === $heroSlide->id);
+
+        $rules = [
             'image' => ['nullable', 'image', 'max:25600'],
             'image_url' => ['nullable', 'string', 'max:2000'],
             'title' => ['nullable', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:1000'],
-            'button_text' => ['nullable', 'string', 'max:100'],
-            'button_link' => ['nullable', 'string', 'max:500'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
-        ]);
+        ];
+
+        if ($isFirst) {
+            $rules['button_text'] = ['nullable', 'string', 'max:100'];
+            $rules['button_link'] = ['nullable', 'string', 'max:500'];
+        }
+
+        $request->validate($rules);
 
         $imagePath = $heroSlide->image_path;
 
@@ -143,8 +153,8 @@ class HeroSlideController extends Controller
             'image_path' => $imagePath,
             'title' => $request->input('title'),
             'subtitle' => $request->input('subtitle'),
-            'button_text' => $request->input('button_text', 'تسوق الآن'),
-            'button_link' => $request->input('button_link', '/catalog'),
+            'button_text' => $isFirst ? $request->input('button_text', 'تسوق الآن') : null,
+            'button_link' => $isFirst ? $request->input('button_link', '/catalog') : null,
             'sort_order' => (int) $request->input('sort_order', $heroSlide->sort_order),
             'is_active' => $request->has('is_active') ? $request->boolean('is_active') : $heroSlide->is_active,
         ]);
@@ -164,6 +174,15 @@ class HeroSlideController extends Controller
      */
     public function destroy(Request $request, HeroSlide $heroSlide): RedirectResponse|JsonResponse
     {
+        $firstSlide = HeroSlide::orderBy('sort_order', 'asc')->orderBy('id', 'asc')->first();
+        if ($firstSlide && $firstSlide->id === $heroSlide->id) {
+            $msg = 'لا يمكن حذف الشريحة الأولى الأساسية، يمكنك تعديلها فقط.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['message' => $msg], 422);
+            }
+            return redirect()->route('admin.hero-slides.index')->with('error', $msg);
+        }
+
         if ($heroSlide->image_path && 
             !str_starts_with($heroSlide->image_path, 'data:') && 
             !str_starts_with($heroSlide->image_path, 'http://') && 

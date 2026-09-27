@@ -1,6 +1,11 @@
 <x-admin-layout>
+    @php
+        $firstSlideId = $slides->first()?->id;
+    @endphp
+
     <div 
         x-data="{
+            firstSlideId: {{ $firstSlideId ? $firstSlideId : 'null' }},
             // Modals state
             createModalOpen: false,
             editModalOpen: false,
@@ -11,10 +16,11 @@
             // Form data
             form: {
                 id: null,
+                is_first: false,
                 title: '',
                 subtitle: '',
-                button_text: 'تسوق الآن',
-                button_link: '/catalog',
+                button_text: '',
+                button_link: '',
                 sort_order: 1,
                 is_active: true,
                 imageFile: null,
@@ -33,10 +39,11 @@
                 this.errors = {};
                 this.form = {
                     id: null,
+                    is_first: false,
                     title: '',
                     subtitle: '',
-                    button_text: 'تسوق الآن',
-                    button_link: '/catalog',
+                    button_text: '',
+                    button_link: '',
                     sort_order: {{ $slides->count() + 1 }},
                     is_active: true,
                     imageFile: null,
@@ -47,10 +54,11 @@
             },
 
             // Open Edit Modal
-            openEditModal(slide) {
+            openEditModal(slide, isFirst = false) {
                 this.errors = {};
                 this.form = {
                     id: slide.id,
+                    is_first: Boolean(isFirst || (this.firstSlideId && slide.id === this.firstSlideId)),
                     title: slide.title || '',
                     subtitle: slide.subtitle || '',
                     button_text: slide.button_text || 'تسوق الآن',
@@ -66,6 +74,12 @@
 
             // Open Delete Modal
             confirmDelete(slide) {
+                if (this.firstSlideId && slide.id === this.firstSlideId) {
+                    window.dispatchEvent(new CustomEvent('toast', { 
+                        detail: { message: 'لا يمكن حذف الشريحة الأولى الأساسية، يمكنك تعديلها فقط.', type: 'error' } 
+                    }));
+                    return;
+                }
                 this.slideToDelete = slide;
                 this.deleteModalOpen = true;
             },
@@ -94,8 +108,6 @@
                 }
                 formData.append('title', this.form.title || '');
                 formData.append('subtitle', this.form.subtitle || '');
-                formData.append('button_text', this.form.button_text || 'تسوق الآن');
-                formData.append('button_link', this.form.button_link || '/catalog');
                 formData.append('sort_order', this.form.sort_order || 0);
                 formData.append('is_active', this.form.is_active ? 1 : 0);
 
@@ -145,8 +157,10 @@
                 }
                 formData.append('title', this.form.title || '');
                 formData.append('subtitle', this.form.subtitle || '');
-                formData.append('button_text', this.form.button_text || 'تسوق الآن');
-                formData.append('button_link', this.form.button_link || '/catalog');
+                if (this.form.is_first) {
+                    formData.append('button_text', this.form.button_text || 'تسوق الآن');
+                    formData.append('button_link', this.form.button_link || '/catalog');
+                }
                 formData.append('sort_order', this.form.sort_order || 0);
                 formData.append('is_active', this.form.is_active ? 1 : 0);
 
@@ -272,6 +286,10 @@
                         <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         تقليب تلقائي كل ثانيتين (2s)
                     </span>
+                    <span>•</span>
+                    <span class="text-neutral-400 text-[11px]">
+                        زر الشراء مخصص للشريحة الأولى الأساسية فقط
+                    </span>
                 </p>
             </div>
 
@@ -293,12 +311,22 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="bg-red-50 border border-red-200 text-red-800 text-xs sm:text-sm p-4 rounded-2xl flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
         <!-- Slides Grid / Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             @forelse($slides as $slide)
+                @php
+                    $isFirst = ($slide->id === $firstSlideId);
+                @endphp
                 <div 
                     x-data="{ currentSlide: {{ json_encode($slide) }} }"
-                    class="bg-surface rounded-card border border-neutral-100 shadow-soft overflow-hidden flex flex-col justify-between transition-all hover:shadow-md"
+                    class="bg-surface rounded-card border {{ $isFirst ? 'border-primary/40 ring-2 ring-primary/10' : 'border-neutral-100' }} shadow-soft overflow-hidden flex flex-col justify-between transition-all hover:shadow-md"
                 >
                     <!-- Preview Banner Card -->
                     <div class="relative h-56 sm:h-64 overflow-hidden bg-neutral-900 flex items-center">
@@ -310,17 +338,23 @@
                         <!-- Gradient Overlay -->
                         <div class="absolute inset-0 bg-gradient-to-r from-primary-950/85 via-primary-900/50 to-transparent"></div>
 
-                        <!-- Badge: Order & Status -->
-                        <div class="absolute top-3 start-3 z-10 flex items-center gap-2">
+                        <!-- Badges: Order, Primary, Status -->
+                        <div class="absolute top-3 start-3 z-10 flex flex-wrap items-center gap-2">
                             <span class="bg-black/60 backdrop-blur-xs text-white text-[11px] font-bold px-2.5 py-1 rounded-full border border-white/20">
                                 #{{ $slide->sort_order }}
                             </span>
+                            @if($isFirst)
+                                <span class="bg-amber-500/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full border border-amber-300 flex items-center gap-1 shadow-2xs">
+                                    <span>⭐</span>
+                                    <span>الشريحة الأولى (الأساسية)</span>
+                                </span>
+                            @endif
                             <span 
                                 class="text-[11px] font-bold px-2.5 py-1 rounded-full border"
                                 :class="currentSlide.is_active ? 'bg-emerald-500/90 text-white border-emerald-400' : 'bg-neutral-600/90 text-neutral-200 border-neutral-500'"
-                                x-text="currentSlide.is_active ? 'مفعلة في الواجهة' : 'معطلة (مخفية)'"
+                                x-text="currentSlide.is_active ? 'مفعلة' : 'مخفية'"
                             >
-                                {{ $slide->is_active ? 'مفعلة في الواجهة' : 'معطلة (مخفية)' }}
+                                {{ $slide->is_active ? 'مفعلة' : 'مخفية' }}
                             </span>
                         </div>
 
@@ -334,12 +368,15 @@
                                     {{ $slide->subtitle }}
                                 </p>
                             @endif
-                            <div class="pt-1">
-                                <span class="inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs">
-                                    <span>{{ $slide->button_text ?: 'تسوق الآن' }}</span>
-                                    <span class="text-[10px] text-white/70">({{ $slide->button_link ?: '/catalog' }})</span>
-                                </span>
-                            </div>
+                            
+                            @if($isFirst && !empty($slide->button_text))
+                                <div class="pt-1">
+                                    <span class="inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs border border-white/20">
+                                        <span>{{ $slide->button_text }}</span>
+                                        <span class="text-[10px] text-white/70">({{ $slide->button_link ?: '/catalog' }})</span>
+                                    </span>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
@@ -361,7 +398,7 @@
                         <div class="flex items-center gap-2">
                             <!-- Edit Button -->
                             <button 
-                                @click="openEditModal(currentSlide)" 
+                                @click="openEditModal(currentSlide, {{ $isFirst ? 'true' : 'false' }})" 
                                 type="button" 
                                 class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-700 bg-white hover:bg-tertiary-100 border border-neutral-200 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs"
                             >
@@ -369,15 +406,26 @@
                                 <span>تعديل</span>
                             </button>
 
-                            <!-- Delete Button -->
-                            <button 
-                                @click="confirmDelete(currentSlide)" 
-                                type="button" 
-                                class="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200/60 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
-                            >
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                <span>حذف</span>
-                            </button>
+                            @if($isFirst)
+                                <!-- Non-deletable indicator for First Slide -->
+                                <span 
+                                    class="inline-flex items-center gap-1 text-xs font-bold text-neutral-400 bg-neutral-100 border border-neutral-200 px-2.5 py-1.5 rounded-xl cursor-not-allowed select-none"
+                                    title="الشريحة الأولى أساسية ولا يمكن حذفها، يمكنك تعديلها فقط"
+                                >
+                                    <span>🔒</span>
+                                    <span>أساسية</span>
+                                </span>
+                            @else
+                                <!-- Delete Button for Other Slides -->
+                                <button 
+                                    @click="confirmDelete(currentSlide)" 
+                                    type="button" 
+                                    class="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200/60 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <span>حذف</span>
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -386,7 +434,7 @@
                     <span class="text-4xl">🖼️</span>
                     <h3 class="font-headline-ar text-lg font-bold text-primary">لا توجد شرائح مضافة حالياً</h3>
                     <p class="text-xs text-neutral-500 max-w-md mx-auto">
-                        قم بإضافة صورتك الأولى لتظهر في سلايدر الصفحة الرئيسية مع نصوصها وأزرارها التفاعلية.
+                        قم بإضافة صورتك الأولى لتظهر في سلايدر الصفحة الرئيسية مع نصوصها التفاعلية.
                     </p>
                     <button 
                         @click="openCreateModal()" 
@@ -400,7 +448,7 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- Modal: Add New Slide                       -->
+        <!-- Modal: Add New Slide (NO Button inputs)    -->
         <!-- ========================================== -->
         <div 
             x-show="createModalOpen" 
@@ -471,28 +519,6 @@
                             placeholder="مثال: تشكيلة مختارة بعناية لأجمل المناسبات واللحظات السعيدة" 
                             class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
                         ></textarea>
-                    </div>
-
-                    <!-- Button Text & Link (Grid 2 cols) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">نص الزر</label>
-                            <input 
-                                type="text" 
-                                x-model="form.button_text" 
-                                placeholder="تسوق الآن" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2 text-xs md:text-sm font-body text-neutral-900"
-                            >
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">رابط الزر</label>
-                            <input 
-                                type="text" 
-                                x-model="form.button_link" 
-                                placeholder="/catalog" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2 text-xs md:text-sm font-body text-neutral-900"
-                            >
-                        </div>
                     </div>
 
                     <!-- Sort Order & Active Status -->
@@ -604,25 +630,33 @@
                         ></textarea>
                     </div>
 
-                    <!-- Button Text & Link (Grid 2 cols) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">نص الزر</label>
-                            <input 
-                                type="text" 
-                                x-model="form.button_text" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2 text-xs md:text-sm font-body text-neutral-900"
-                            >
+                    <!-- Button Text & Link (ONLY FOR FIRST SLIDE) -->
+                    <template x-if="form.is_first">
+                        <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3">
+                            <div class="flex items-center gap-1.5 text-amber-800 text-xs font-bold">
+                                <span>⭐</span>
+                                <span>الزر التفاعلي (خاص بالشريحة الأولى فقط)</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-neutral-700 mb-1">نص الزر</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="form.button_text" 
+                                        class="w-full bg-white border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-3 py-1.5 text-xs font-body text-neutral-900"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-neutral-700 mb-1">رابط الزر</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="form.button_link" 
+                                        class="w-full bg-white border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-3 py-1.5 text-xs font-body text-neutral-900"
+                                    >
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-700 mb-1">رابط الزر</label>
-                            <input 
-                                type="text" 
-                                x-model="form.button_link" 
-                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2 text-xs md:text-sm font-body text-neutral-900"
-                            >
-                        </div>
-                    </div>
+                    </template>
 
                     <!-- Sort Order & Active Status -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

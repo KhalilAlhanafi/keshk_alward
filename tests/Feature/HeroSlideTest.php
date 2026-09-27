@@ -65,7 +65,7 @@ class HeroSlideTest extends TestCase
         $response->assertSee('شريحة تجريبية');
     }
 
-    public function test_admin_can_create_hero_slide_with_image_upload(): void
+    public function test_admin_can_create_hero_slide_with_image_upload_and_no_buttons(): void
     {
         Storage::fake('public');
 
@@ -75,8 +75,6 @@ class HeroSlideTest extends TestCase
             'image' => $file,
             'title' => 'عرض خاص على الورود',
             'subtitle' => 'خصومات حتى 30%',
-            'button_text' => 'اكتشف العروض',
-            'button_link' => '/catalog?tag=sale',
             'sort_order' => 2,
             'is_active' => true,
         ]);
@@ -84,8 +82,37 @@ class HeroSlideTest extends TestCase
         $response->assertStatus(201);
         $this->assertDatabaseHas('hero_slides', [
             'title' => 'عرض خاص على الورود',
-            'button_text' => 'اكتشف العروض',
+            'button_text' => null,
+            'button_link' => null,
         ]);
+    }
+
+    public function test_first_slide_cannot_be_deleted(): void
+    {
+        $firstSlide = HeroSlide::orderBy('sort_order', 'asc')->orderBy('id', 'asc')->first();
+        if (!$firstSlide) {
+            $firstSlide = HeroSlide::create([
+                'image_path' => 'https://example.com/first.jpg',
+                'title' => 'الشريحة الأولى',
+                'sort_order' => 1,
+            ]);
+        }
+
+        $secondSlide = HeroSlide::create([
+            'image_path' => 'https://example.com/second.jpg',
+            'title' => 'الشريحة الثانية',
+            'sort_order' => 99,
+        ]);
+
+        // Attempting to delete the first slide fails with 422
+        $response = $this->actingAs($this->adminUser)->deleteJson("/admin/hero-slides/{$firstSlide->id}");
+        $response->assertStatus(422);
+        $this->assertDatabaseHas('hero_slides', ['id' => $firstSlide->id]);
+
+        // Deleting subsequent slides succeeds
+        $response = $this->actingAs($this->adminUser)->deleteJson("/admin/hero-slides/{$secondSlide->id}");
+        $response->assertStatus(200);
+        $this->assertDatabaseMissing('hero_slides', ['id' => $secondSlide->id]);
     }
 
     public function test_admin_can_toggle_slide_active_status(): void

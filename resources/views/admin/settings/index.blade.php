@@ -275,64 +275,21 @@
                     </div>
 
                     <!-- Banner to Carousel Slider Manager -->
-                    <div class="p-3.5 bg-tertiary-100/80 border border-primary/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 my-2">
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-2xl">🖼️</span>
+                    <div class="p-4 bg-tertiary-100/90 border border-primary/25 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 my-2 shadow-2xs">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">🖼️</span>
                             <div>
                                 <h4 class="text-xs md:text-sm font-bold text-primary">سلايدر الصفحة الرئيسية (Carousel)</h4>
-                                <p class="text-[11px] text-neutral-600">يمكنك إضافة عدة صور مع كلام خاص بكل صورة وتقليبها تلقائياً كل ثانيتين.</p>
+                                <p class="text-[11px] text-neutral-600 mt-0.5">يتم التحكم بجميع صور ونصوص وعروض السلايدر المتحرك في الصفحة الرئيسية من خلال هذا القسم المخصص.</p>
                             </div>
                         </div>
                         <a 
                             href="{{ route('admin.hero-slides.index') }}" 
-                            class="inline-flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-xs flex-shrink-0"
+                            class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-xs flex-shrink-0"
                         >
-                            <span>إدارة السلايدر والصور</span>
+                            <span>إدارة شرائح السلايدر</span>
                             <span class="rtl:rotate-180">←</span>
                         </a>
-                    </div>
-
-                    <div class="pt-2 mb-4">
-                        <label class="block text-xs font-bold text-neutral-700 mb-1">
-                            الصورة الكبيرة البديلة (Hero Image Fallback)
-                        </label>
-                        <input 
-                            type="file" 
-                            name="home_hero_image" 
-                            accept="image/*"
-                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
-                        >
-                        @if(isset($settings['home_hero_image']) && $settings['home_hero_image'])
-                            @php
-                                $heroVal = $settings['home_hero_image'];
-                                $heroPreviewSrc = (str_starts_with($heroVal, 'data:') || str_starts_with($heroVal, 'http'))
-                                    ? $heroVal
-                                    : asset('storage/' . ltrim($heroVal, '/'));
-                            @endphp
-                            <div class="mt-3">
-                                <span class="text-xs text-neutral-500 block mb-1">الصورة الحالية:</span>
-                                <img src="{{ $heroPreviewSrc }}" alt="Hero Image" class="h-24 object-cover rounded-lg border border-neutral-200">
-                            </div>
-                        @endif
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-neutral-700 mb-1">العنوان الرئيسي في الصفحة الرئيسية</label>
-                        <input 
-                            type="text" 
-                            name="home_hero_title" 
-                            value="{{ old('home_hero_title', $settings['home_hero_title'] ?? 'جمال يزهر في كل مناسبة') }}" 
-                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-neutral-700 mb-1">النص الفرعي في الصفحة الرئيسية</label>
-                        <textarea 
-                            name="home_hero_subtitle" 
-                            rows="2"
-                            class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl px-4 py-2.5 text-xs md:text-sm font-body text-neutral-900"
-                        >{{ old('home_hero_subtitle', $settings['home_hero_subtitle'] ?? 'اكتشف تشكيلتنا الفاخرة من الزهور والهدايا المصممة بعناية لتناسب جميع مناسباتك وتوصل المشاعر بكل رقة.') }}</textarea>
                     </div>
 
                     <div class="mt-4 pt-4 border-t border-neutral-100">
