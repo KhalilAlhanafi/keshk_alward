@@ -56,7 +56,7 @@
             @mouseleave="isPaused = false"
             @touchstart.passive="isPaused = true"
             @touchend.passive="isPaused = false"
-            class="relative rounded-card md:rounded-3xl overflow-hidden shadow-soft bg-neutral-950 w-full h-[220px] sm:h-[300px] md:h-[380px] lg:h-[430px] flex items-center select-none group"
+            class="relative rounded-card md:rounded-3xl overflow-hidden shadow-soft bg-neutral-950 w-full h-[260px] sm:h-[380px] md:h-[480px] lg:h-[560px] xl:h-[640px] flex items-center select-none group"
             aria-label="سلايدر العروض والزهور"
         >
             <!-- Slides Container -->
@@ -86,7 +86,7 @@
                     <img 
                         src="{{ $slide->image_url }}"
                         alt="{{ $slide->title ?? 'كشك الورد - باقات زهور فاخرة' }}" 
-                        class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85]"
+                        class="absolute inset-0 w-full h-full object-contain object-center filter brightness-[0.92]"
                         loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
                     >
 
