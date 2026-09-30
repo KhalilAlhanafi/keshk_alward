@@ -180,6 +180,207 @@
             @endif
         </section>
 
+        {{-- ── Order Status Tracker (visible only when the user has an active order) ── --}}
+        @if($latestActiveOrder)
+            @php
+                $orderStatuses = [
+                    'pending'          => ['label' => 'قيد الانتظار',   'icon' => 'clock',       'color' => 'amber'],
+                    'confirmed'        => ['label' => 'تم التأكيد',    'icon' => 'check-circle', 'color' => 'sky'],
+                    'processing'       => ['label' => 'قيد التجهيز',   'icon' => 'cog',          'color' => 'violet'],
+                    'out_for_delivery' => ['label' => 'خارج للتوصيل',  'icon' => 'truck',        'color' => 'indigo'],
+                    'delivered'        => ['label' => 'تم التوصيل',    'icon' => 'badge-check',  'color' => 'emerald'],
+                ];
+                $statusKeys = array_keys($orderStatuses);
+                $currentStatusValue = $latestActiveOrder->status instanceof \BackedEnum ? $latestActiveOrder->status->value : (string) $latestActiveOrder->status;
+                $currentStepIndex = array_search($currentStatusValue, $statusKeys);
+                if ($currentStepIndex === false) $currentStepIndex = 0;
+                $totalSteps = count($statusKeys);
+                $progressPercent = $totalSteps > 1 ? round(($currentStepIndex / ($totalSteps - 1)) * 100) : 0;
+            @endphp
+
+            <section
+                x-data="{ visible: true }"
+                x-show="visible"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 -translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0 -translate-y-2"
+                class="-mt-4 md:-mt-6 relative overflow-hidden rounded-card md:rounded-3xl shadow-soft border border-purple-100"
+            >
+                {{-- Background --}}
+                <div class="absolute inset-0 bg-gradient-to-l from-primary-50/80 via-white to-tertiary-50/60"></div>
+
+                <div class="relative z-10 p-5 sm:p-6 md:p-8">
+                    {{-- Header Row --}}
+                    <div class="flex items-center justify-between mb-5 md:mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-headline-ar text-lg md:text-xl text-primary font-bold leading-tight">
+                                    تتبع طلبك
+                                </h3>
+                                <p class="text-xs text-neutral-500 font-body-ar">
+                                    طلب رقم <span class="font-body font-bold text-primary">{{ $latestActiveOrder->order_number }}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <a
+                                href="{{ route('orders.show', $latestActiveOrder->id) }}"
+                                class="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm hover:shadow transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                            >
+                                <span>تفاصيل الطلب</span>
+                                <svg class="w-3.5 h-3.5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </a>
+                            <button
+                                @click="visible = false"
+                                type="button"
+                                class="w-7 h-7 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-500 flex items-center justify-center transition-all cursor-pointer"
+                                aria-label="إغلاق"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- ── Desktop Stepper (hidden on mobile) ── --}}
+                    <div class="hidden sm:block">
+                        <div class="relative flex items-start justify-between">
+                            {{-- Progress Bar Background --}}
+                            <div class="absolute top-5 start-[10%] end-[10%] h-1 bg-neutral-200 rounded-full z-0"></div>
+                            {{-- Active Progress Bar --}}
+                            <div
+                                class="absolute top-5 start-[10%] h-1 bg-gradient-to-l from-primary via-secondary to-primary rounded-full z-[1] transition-all duration-700 ease-out"
+                                style="width: {{ $progressPercent * 0.8 }}%;"
+                            ></div>
+
+                            @foreach($statusKeys as $stepIdx => $statusKey)
+                                @php
+                                    $step = $orderStatuses[$statusKey];
+                                    $isCompleted = $stepIdx < $currentStepIndex;
+                                    $isCurrent = $stepIdx === $currentStepIndex;
+                                    $isPending = $stepIdx > $currentStepIndex;
+
+                                    if ($isCompleted) {
+                                        $circleClasses = 'bg-primary text-white shadow-md ring-4 ring-primary/20';
+                                    } elseif ($isCurrent) {
+                                        $circleClasses = 'bg-secondary text-primary-900 shadow-lg ring-4 ring-secondary/30 animate-pulse';
+                                    } else {
+                                        $circleClasses = 'bg-neutral-100 text-neutral-400 border-2 border-neutral-200';
+                                    }
+
+                                    $labelClasses = $isCurrent
+                                        ? 'text-primary font-bold'
+                                        : ($isCompleted ? 'text-primary/70 font-semibold' : 'text-neutral-400');
+                                @endphp
+
+                                <div class="flex flex-col items-center relative z-10" style="width: {{ 100 / $totalSteps }}%;">
+                                    {{-- Circle --}}
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 {{ $circleClasses }}">
+                                        @if($isCompleted)
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        @elseif($step['icon'] === 'clock')
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        @elseif($step['icon'] === 'check-circle')
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        @elseif($step['icon'] === 'cog')
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        @elseif($step['icon'] === 'truck')
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2-1 2 1 2-1 2 1zM13 16l6-3V5l-6 3v8z" />
+                                            </svg>
+                                        @elseif($step['icon'] === 'badge-check')
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                            </svg>
+                                        @endif
+                                    </div>
+
+                                    {{-- Label --}}
+                                    <span class="mt-2 text-[11px] sm:text-xs font-body-ar {{ $labelClasses }} text-center leading-tight">
+                                        {{ $step['label'] }}
+                                    </span>
+
+                                    @if($isCurrent)
+                                        <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- ── Mobile Stepper (visible only on small screens) ── --}}
+                    <div class="sm:hidden">
+                        <div class="flex items-center gap-3 p-3 bg-white/80 rounded-2xl border border-neutral-100 shadow-xs">
+                            {{-- Current Status Icon --}}
+                            @php
+                                $currentStep = $orderStatuses[$statusKeys[$currentStepIndex]] ?? $orderStatuses['pending'];
+                                $mobileStepText = ($currentStepIndex + 1) . ' من ' . $totalSteps;
+                            @endphp
+                            <div class="w-12 h-12 rounded-xl bg-secondary/20 text-primary flex items-center justify-center flex-shrink-0">
+                                @if($currentStep['icon'] === 'clock')
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                @elseif($currentStep['icon'] === 'check-circle')
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                @elseif($currentStep['icon'] === 'cog')
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                @elseif($currentStep['icon'] === 'truck')
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2-1 2 1 2-1 2 1zM13 16l6-3V5l-6 3v8z" />
+                                    </svg>
+                                @elseif($currentStep['icon'] === 'badge-check')
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                    </svg>
+                                @endif
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-bold text-sm text-primary font-body-ar">{{ $currentStep['label'] }}</span>
+                                    <span class="text-[10px] text-neutral-400 font-body">{{ $mobileStepText }}</span>
+                                </div>
+                                {{-- Progress bar --}}
+                                <div class="w-full h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+                                    <div
+                                        class="h-full bg-gradient-to-l from-primary to-secondary rounded-full transition-all duration-700 ease-out"
+                                        style="width: {{ $progressPercent }}%;"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        @endif
+
         <!-- Instagram Promo Banner -->
         <div 
             x-data="{ showBanner: !sessionStorage.getItem('hide_ig_banner') }" 

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\HeroSlide;
+use App\Models\Order;
 use App\Models\Product;
 use App\Services\CacheService;
 use App\Services\ImageService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -14,6 +16,14 @@ class HomepageController extends Controller
 {
     public function __invoke(ImageService $imageService): \Illuminate\View\View
     {
+        // Fetch the latest active order for the logged-in user (non-delivered, non-cancelled)
+        $latestActiveOrder = null;
+        if (Auth::check()) {
+            $latestActiveOrder = Order::where('user_id', Auth::id())
+                ->whereNotIn('status', ['delivered', 'cancelled'])
+                ->latest()
+                ->first();
+        }
         // Active hero slides — cached for 24 hours (busted by HeroSlide observer via CacheService)
         try {
             $heroSlides = Cache::remember(CacheService::KEY_HERO_SLIDES_ACTIVE, CacheService::TTL_HERO_SLIDES, function () {
@@ -62,6 +72,6 @@ class HomepageController extends Controller
                 ->get();
         }
 
-        return view('homepage', compact('bestSellers', 'categories', 'heroSlides'));
+        return view('homepage', compact('bestSellers', 'categories', 'heroSlides', 'latestActiveOrder'));
     }
 }
