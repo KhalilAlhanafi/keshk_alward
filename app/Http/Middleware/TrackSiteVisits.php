@@ -7,6 +7,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Auth;
+
 
 class TrackSiteVisits
 {
@@ -29,7 +31,7 @@ class TrackSiteVisits
             ) {
                 $ip = $request->ip();
                 $today = now()->toDateString();
-                
+
                 // Track daily unique visit per IP per hour to avoid spamming the DB
                 $cacheKey = 'visit_tracked_' . md5($ip . '_' . $today . '_' . date('H'));
 
@@ -39,7 +41,7 @@ class TrackSiteVisits
                     try {
                         SiteVisit::create([
                             'ip_address'   => $ip,
-                            'user_id'      => auth()->id(),
+                            'user_id' => Auth::id(),
                             'url'          => mb_substr($request->fullUrl(), 0, 500),
                             'user_agent'   => mb_substr($request->userAgent() ?? '', 0, 500),
                             'visited_date' => $today,
