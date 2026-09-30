@@ -507,9 +507,20 @@
                 </h3>
                 <div class="space-y-3">
                     @foreach($order->items as $item)
-                        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-tertiary-50 border border-neutral-100/80 text-xs">
-                            <div class="space-y-1">
-                                <h4 class="font-bold text-primary text-sm">{{ $item->product_name_snapshot }}</h4>
+                        <div class="flex items-center gap-3 sm:gap-4 p-3.5 rounded-2xl bg-tertiary-50 border border-neutral-100/80 text-xs">
+                            {{-- Product Image --}}
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-neutral-200/60 bg-white flex-shrink-0 shadow-xs">
+                                <img
+                                    src="{{ $item->product?->primary_image_url ?? 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=150&q=80' }}"
+                                    alt="{{ $item->product_name_snapshot }}"
+                                    loading="lazy"
+                                    class="w-full h-full object-cover"
+                                >
+                            </div>
+
+                            {{-- Product Details --}}
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <h4 class="font-bold text-primary text-sm truncate">{{ $item->product_name_snapshot }}</h4>
                                 <div class="flex flex-wrap items-center gap-2 text-neutral-500">
                                     <span>الكمية: {{ $item->quantity }}</span>
                                     @if($item->size_label_snapshot && $item->size_label_snapshot !== 'لا يوجد')
@@ -527,7 +538,9 @@
                                     <p class="text-neutral-400 italic mt-0.5">الرسالة المرفقة: "{{ $item->message }}"</p>
                                 @endif
                             </div>
-                            <div class="font-bold text-primary text-sm font-body">
+
+                            {{-- Price --}}
+                            <div class="font-bold text-primary text-sm font-body flex-shrink-0">
                                 {{ format_money($item->unit_price * $item->quantity) }}
                             </div>
                         </div>

@@ -75,7 +75,7 @@ class OrderController extends Controller
         // Policy: user can only see their own orders
         abort_if(Auth::id() !== $order->user_id, 403);
 
-        $order->load(['items.addons', 'deliveryArea', 'transactions']);
+        $order->load(['items.addons', 'items.product', 'deliveryArea', 'transactions']);
 
         $shamCashWallet = null;
         if ($order->payment_method->value === 'sham_cash') {
