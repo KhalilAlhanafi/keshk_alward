@@ -16,11 +16,12 @@ class HomepageController extends Controller
 {
     public function __invoke(ImageService $imageService): \Illuminate\View\View
     {
-        // Fetch the latest active order for the logged-in user (non-delivered, non-cancelled)
+        // Fetch the latest recent order for the logged-in user (within last 7 days, excluding cancelled)
         $latestActiveOrder = null;
         if (Auth::check()) {
             $latestActiveOrder = Order::where('user_id', Auth::id())
-                ->whereNotIn('status', ['delivered', 'cancelled'])
+                ->where('status', '!=', 'cancelled')
+                ->where('created_at', '>=', now()->subDays(7))
                 ->latest()
                 ->first();
         }
