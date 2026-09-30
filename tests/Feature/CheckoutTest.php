@@ -155,3 +155,68 @@ test('user can checkout with sham cash and status is awaiting verification', fun
         'payment_status' => PaymentStatus::AWAITING_VERIFICATION->value,
     ]);
 });
+
+test('user can checkout with other unlisted delivery area and fee is informed later', function () {
+    $user = User::create([
+        'name' => 'Other Area User',
+        'email' => 'other@example.com',
+        'phone' => '+963911111111',
+        'password' => bcrypt('password'),
+    ]);
+
+    $category = Category::create([
+        'name_ar' => 'Test Cat 3',
+        'slug' => 'test-cat-' . uniqid(),
+    ]);
+
+    $product = Product::create([
+        'category_id' => $category->id,
+        'name_ar' => 'Test Product 3',
+        'slug' => 'test-product-' . uniqid(),
+        'sku' => 'SKU-' . uniqid(),
+        'base_price' => 15000,
+        'is_active' => true,
+    ]);
+
+    $size = ProductSize::create([
+        'product_id' => $product->id,
+        'size_key' => SizeKey::MEDIUM,
+        'label_ar' => 'وسط',
+        'price' => 15000,
+        'stock' => 5,
+    ]);
+
+    $cart = Cart::create(['user_id' => $user->id]);
+    CartItem::create([
+        'cart_id' => $cart->id,
+        'product_id' => $product->id,
+        'product_size_id' => $size->id,
+        'quantity' => 1,
+    ]);
+
+    // Send order with delivery_area_id => null or 'other'
+    $response = actingAs($user)->postJson('/orders', [
+        'recipient_name' => 'Recipient Other Area',
+        'recipient_phone' => '+963911111111',
+        'delivery_area_id' => 'other',
+        'delivery_address' => 'دمشق — جرمانا ساحة السيوف بناء 4',
+        'delivery_date' => now()->addDay()->format('Y-m-d'),
+        'delivery_time_slot' => '12:00',
+        'payment_method' => PaymentMethod::COD->value,
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['message' => 'تم إتمام طلبك بنجاح!']);
+
+    $order = Order::where('recipient_name', 'Recipient Other Area')->first();
+    expect($order)->not->toBeNull();
+    expect($order->delivery_area_id)->toBeNull();
+    expect($order->delivery_fee)->toBe(0);
+    expect($order->total)->toBe(15000);
+
+    // Verify order show view renders 'سيتم إخبارك لاحقاً'
+    $showResponse = actingAs($user)->get(route('orders.show', $order->id));
+    $showResponse->assertStatus(200);
+    $showResponse->assertSee('سيتم إخبارك لاحقاً');
+    $showResponse->assertSee('غير ذلك (منطقة أخرى)');
+});

@@ -141,7 +141,13 @@ class TelegramNotifierService
 
         $deliveryArea = $order->deliveryArea
             ? "{$order->deliveryArea->city_ar} - {$order->deliveryArea->area_ar}"
-            : '—';
+            : 'غير ذلك (منطقة أخرى — سيتم إخبار الزبون لاحقاً)';
+
+        $deliveryFeeText = $order->delivery_area_id
+            ? format_money($order->delivery_fee)
+            : 'سيتم إخبارك لاحقاً';
+
+        $totalText = format_money($order->total) . (!$order->delivery_area_id ? ' (بدون أجور التوصيل)' : '');
 
         $paymentMethod = match ($order->payment_method?->value ?? (string) $order->payment_method) {
             'cod', 'cash_on_delivery' => 'الدفع عند الاستلام',
@@ -168,11 +174,13 @@ class TelegramNotifierService
             "👤 <b>المستلم:</b> {$order->recipient_name}",
             "📞 <b>هاتف:</b> {$order->recipient_phone}",
             "📍 <b>المنطقة:</b> {$deliveryArea}",
+            "🏠 <b>العنوان:</b> {$order->delivery_address}",
             '',
             '🛒 <b>المنتجات:</b>',
             $itemsText,
             '',
-            "💰 <b>الإجمالي:</b> " . format_money($order->total),
+            "🚚 <b>أجور التوصيل:</b> {$deliveryFeeText}",
+            "💰 <b>الإجمالي:</b> {$totalText}",
             "💳 <b>الدفع:</b> {$paymentMethod}",
             "🔖 <b>حالة الدفع:</b> {$paymentStatus}",
             '',

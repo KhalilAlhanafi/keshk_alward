@@ -543,6 +543,7 @@
                 <div class="space-y-2 text-xs md:text-sm text-neutral-700">
                     <p><span class="font-bold text-neutral-400">اسم المستلم:</span> {{ $order->recipient_name }}</p>
                     <p><span class="font-bold text-neutral-400">رقم الهاتف:</span> <span class="font-body" dir="ltr">{{ $order->recipient_phone }}</span></p>
+                    <p><span class="font-bold text-neutral-400">منطقة التوصيل:</span> {{ $order->deliveryArea ? ($order->deliveryArea->city_ar . ' - ' . $order->deliveryArea->area_ar) : 'غير ذلك (منطقة أخرى)' }}</p>
                     <p><span class="font-bold text-neutral-400">عنوان التوصيل:</span> {{ $order->delivery_address }}</p>
                     <p><span class="font-bold text-neutral-400">تاريخ التوصيل:</span> <span class="font-body">{{ $order->delivery_date }}</span></p>
                     <p><span class="font-bold text-neutral-400">فترة التوصيل:</span> <span class="font-body">{{ $order->delivery_time_slot }}</span></p>
@@ -554,8 +555,23 @@
                 <div class="space-y-2 text-xs md:text-sm text-neutral-700">
                     <p><span class="font-bold text-neutral-400">طريقة الدفع:</span> {{ $order->payment_method->labelAr() }}</p>
                     <p><span class="font-bold text-neutral-400">المجموع الفرعي:</span> <span class="font-body">{{ format_money($order->subtotal) }}</span></p>
-                    <p><span class="font-bold text-neutral-400">رسوم التوصيل:</span> <span class="font-body">{{ format_money($order->delivery_fee) }}</span></p>
-                    <p class="text-base font-bold text-primary pt-2 border-t border-neutral-100"><span class="font-bold text-neutral-400">الإجمالي الكلي:</span> <span class="font-body text-lg">{{ format_money($order->total) }}</span></p>
+                    <p>
+                        <span class="font-bold text-neutral-400">رسوم التوصيل:</span> 
+                        <span class="font-body">
+                            @if(!$order->delivery_area_id)
+                                <span class="text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">سيتم إخبارك لاحقاً</span>
+                            @else
+                                {{ format_money($order->delivery_fee) }}
+                            @endif
+                        </span>
+                    </p>
+                    <p class="text-base font-bold text-primary pt-2 border-t border-neutral-100">
+                        <span class="font-bold text-neutral-400">الإجمالي الكلي:</span> 
+                        <span class="font-body text-lg">{{ format_money($order->total) }}</span>
+                        @if(!$order->delivery_area_id)
+                            <span class="block text-[11px] font-normal text-amber-800 mt-1">* غير شامل رسوم التوصيل (سيتم إخبارك بها لاحقاً)</span>
+                        @endif
+                    </p>
                 </div>
             </div>
         </div>

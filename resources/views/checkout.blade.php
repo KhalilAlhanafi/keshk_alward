@@ -36,7 +36,24 @@
                     return this.deliveryAreas.filter(a => a.city_ar === this.selectedCity);
                 },
 
+                onCityChange() {
+                    if (this.selectedCity === 'other_city') {
+                        this.selectedAreaId = 'other';
+                    } else {
+                        this.selectedAreaId = this.filteredAreas.length ? this.filteredAreas[0].id : 'other';
+                    }
+                    this.updateDeliveryFee();
+                },
+
                 updateDeliveryFee() {
+                    if (this.selectedAreaId === 'other' || !this.selectedAreaId) {
+                        this.totals.delivery_fee = 0;
+                        this.totals.formatted_delivery_fee = 'سيتم إخبارك لاحقاً';
+                        this.totals.total = this.totals.subtotal + (this.totals.addons_total || 0);
+                        this.totals.formatted_total = formatMoney(this.totals.total);
+                        return;
+                    }
+
                     const area = this.deliveryAreas.find(a => a.id == this.selectedAreaId);
                     if (area) {
                         const fee = area.delivery_fee;
@@ -70,6 +87,14 @@
                         return;
                     }
 
+                    let finalAddress = this.deliveryAddress.trim();
+                    if (this.selectedAreaId === 'other') {
+                        const cityName = (this.selectedCity && this.selectedCity !== 'other_city') ? this.selectedCity : '';
+                        if (cityName && !finalAddress.includes(cityName)) {
+                            finalAddress = 'المدينة: ' + cityName + ' — ' + finalAddress;
+                        }
+                    }
+
                     this.submitting = true;
 
                     try {
@@ -83,8 +108,8 @@
                             body: JSON.stringify({
                                 recipient_name: recipientName,
                                 recipient_phone: this.phone,
-                                delivery_area_id: this.selectedAreaId,
-                                delivery_address: this.deliveryAddress.trim(),
+                                delivery_area_id: this.selectedAreaId === 'other' ? null : this.selectedAreaId,
+                                delivery_address: finalAddress,
                                 delivery_date: this.deliveryDate,
                                 delivery_time_slot: this.deliveryTimeSlot,
                                 card_message: this.cardMessage,
@@ -211,13 +236,14 @@
                             <div class="relative">
                                 <select 
                                     x-model="selectedCity"
-                                    @change="selectedAreaId = filteredAreas.length ? filteredAreas[0].id : ''; updateDeliveryFee()"
+                                    @change="onCityChange()"
                                     style="background-image: none !important;"
                                     class="w-full [background-image:none] appearance-none bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl ps-4 pe-10 py-2.5 text-xs md:text-sm font-body cursor-pointer"
                                 >
                                     @foreach($cities as $city)
                                         <option value="{{ $city }}">{{ $city }}</option>
                                     @endforeach
+                                    <option value="other_city">مدينة أخرى / غير ذلك</option>
                                 </select>
                                 <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3.5 text-neutral-500">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -242,11 +268,22 @@
                                     <template x-for="area in filteredAreas" :key="area.id">
                                         <option :value="area.id" x-text="area.area_ar + ' (' + formatMoney(area.delivery_fee) + ')'"></option>
                                     </template>
+                                    <option value="other">غير ذلك (سيتم إخبارك لاحقاً)</option>
                                 </select>
                                 <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3.5 text-neutral-500">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div x-show="selectedAreaId === 'other'" class="p-3 bg-purple-100/60 rounded-2xl text-xs text-primary border border-secondary/30 flex items-start gap-2.5 transition-all">
+                        <svg class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <span class="font-bold text-primary">سعر التوصيل: سيتم إخبارك لاحقاً.</span>
+                            <p class="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">يرجى كتابة عنوانك بالتفصيل أدناه (المدينة والمنطقة والشارع)، وسيتواصل معك فريقنا لتأكيد إمكانية وقيمة أجور التوصيل لمنطقتك.</p>
                         </div>
                     </div>
 
@@ -451,8 +488,19 @@
 
                         <div class="flex justify-between items-center">
                             <span>أجور التوصيل</span>
-                            <span class="font-bold text-neutral-800 font-body" x-text="totals.formatted_delivery_fee || 'مجاناً'"></span>
+                            <span 
+                                class="font-bold font-body" 
+                                :class="selectedAreaId === 'other' ? 'text-primary text-xs bg-purple-100/80 px-2.5 py-1 rounded-xl' : 'text-neutral-800'"
+                                x-text="totals.formatted_delivery_fee || 'مجاناً'"
+                            ></span>
                         </div>
+
+                        <template x-if="selectedAreaId === 'other'">
+                            <div class="text-[11px] text-neutral-600 bg-purple-50/80 rounded-xl p-2 border border-purple-100 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-secondary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span>أجور التوصيل غير مشمولة في الإجمالي، سيتم إخبارك بها لاحقاً.</span>
+                            </div>
+                        </template>
 
                         <div class="border-t border-neutral-100 pt-3 flex justify-between items-center text-base">
                             <span class="font-bold text-primary">الإجمالي الكلي</span>

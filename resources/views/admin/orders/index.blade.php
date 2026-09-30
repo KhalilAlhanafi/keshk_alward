@@ -57,7 +57,13 @@
                                     <div class="text-[11px] text-neutral-400 font-body" dir="ltr">{{ $ord->recipient_phone }}</div>
                                 </td>
                                 <td class="p-3 font-medium text-neutral-600">
-                                    {{ $ord->deliveryArea?->city_ar }} - {{ $ord->deliveryArea?->area_ar }}
+                                    @if($ord->deliveryArea)
+                                        {{ $ord->deliveryArea->city_ar }} - {{ $ord->deliveryArea->area_ar }}
+                                    @else
+                                        <span class="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                            غير ذلك (سيُحدد لاحقاً)
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="p-3">
                                     <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold {{ ($ord->payment_method?->value ?? (string)$ord->payment_method) === 'sham_cash' ? 'bg-secondary/30 text-primary-950' : 'bg-tertiary-100 text-neutral-800' }}">

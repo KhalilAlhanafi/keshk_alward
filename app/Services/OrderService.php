@@ -67,13 +67,18 @@ class OrderService
             }
         }
 
-        // Validate delivery area exists and is active
-        $deliveryArea = DeliveryArea::where('id', $data['delivery_area_id'])
-            ->where('is_active', true)
-            ->firstOrFail();
+        // Validate delivery area exists and is active (if specified)
+        $deliveryArea = null;
+        $deliveryFee = 0;
+        if (!empty($data['delivery_area_id'])) {
+            $deliveryArea = DeliveryArea::where('id', $data['delivery_area_id'])
+                ->where('is_active', true)
+                ->firstOrFail();
+            $deliveryFee = $deliveryArea->delivery_fee;
+        }
 
         // Calculate totals using server-side prices (source of truth)
-        $totals = $this->totalsService->calculate($cart, $deliveryArea->delivery_fee);
+        $totals = $this->totalsService->calculate($cart, $deliveryFee);
 
         // Handle idempotency - prevent duplicate orders
         $idempotencyKey = $data['idempotency_key'] ?? Str::uuid();
@@ -126,7 +131,7 @@ class OrderService
                 'user_id' => auth()->id(),
                 'recipient_name' => $data['recipient_name'],
                 'recipient_phone' => $data['recipient_phone'],
-                'delivery_area_id' => $deliveryArea->id,
+                'delivery_area_id' => $deliveryArea?->id,
                 'delivery_address' => $data['delivery_address'],
                 'delivery_date' => $data['delivery_date'],
                 'delivery_time_slot' => $data['delivery_time_slot'],

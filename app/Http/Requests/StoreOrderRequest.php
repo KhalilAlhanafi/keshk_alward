@@ -17,6 +17,19 @@ class StoreOrderRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('delivery_area_id')) {
+            $val = $this->input('delivery_area_id');
+            if ($val === 'other' || $val === '' || $val === 'null' || $val === 0) {
+                $this->merge(['delivery_area_id' => null]);
+            }
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      */
     public function rules(): array
@@ -24,7 +37,7 @@ class StoreOrderRequest extends FormRequest
         return [
             'recipient_name' => ['required', 'string', 'max:255'],
             'recipient_phone' => ['required', 'string', 'regex:/^\+9639\d{8}$/'],
-            'delivery_area_id' => ['required', 'exists:delivery_areas,id'],
+            'delivery_area_id' => ['nullable', 'exists:delivery_areas,id'],
             'delivery_address' => ['required', 'string', 'max:1000'],
             'delivery_date' => ['required', 'date', 'after_or_equal:today'],
             'delivery_time_slot' => ['required', 'string', Rule::in([
