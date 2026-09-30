@@ -225,9 +225,6 @@
                                 <h3 class="font-headline-ar text-lg md:text-xl text-primary font-bold leading-tight">
                                     تتبع طلبك
                                 </h3>
-                                <p class="text-xs text-neutral-500 font-body-ar">
-                                    طلب رقم <span class="font-body font-bold text-primary">{{ $latestActiveOrder->order_number }}</span>
-                                </p>
                             </div>
                         </div>
 
