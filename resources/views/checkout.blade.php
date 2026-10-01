@@ -16,6 +16,7 @@
                 phone: '+9639',
                 selectedCity: '{{ $cities->first() ?? 'دمشق' }}',
                 selectedAreaId: '{{ $deliveryAreas->first()?->id ?? '' }}',
+                customAreaName: '',
                 deliveryAddress: '',
                 deliveryDate: '{{ $defaultDeliveryDate }}',
                 deliveryTimeSlot: '10:00',
@@ -37,16 +38,14 @@
                 },
 
                 onCityChange() {
-                    if (this.selectedCity === 'other_city') {
-                        this.selectedAreaId = 'other';
-                    } else {
-                        this.selectedAreaId = this.filteredAreas.length ? this.filteredAreas[0].id : 'other';
-                    }
+                    const firstArea = this.filteredAreas[0];
+                    this.selectedAreaId = firstArea ? String(firstArea.id) : 'other';
+                    this.customAreaName = '';
                     this.updateDeliveryFee();
                 },
 
                 updateDeliveryFee() {
-                    if (this.selectedAreaId === 'other' || !this.selectedAreaId) {
+                    if (this.selectedAreaId == 'other' || !this.selectedAreaId) {
                         this.totals.delivery_fee = 0;
                         this.totals.formatted_delivery_fee = 'سيتم إخبارك لاحقاً';
                         this.totals.total = this.totals.subtotal + (this.totals.addons_total || 0);
@@ -88,10 +87,16 @@
                     }
 
                     let finalAddress = this.deliveryAddress.trim();
-                    if (this.selectedAreaId === 'other') {
-                        const cityName = (this.selectedCity && this.selectedCity !== 'other_city') ? this.selectedCity : '';
-                        if (cityName && !finalAddress.includes(cityName)) {
-                            finalAddress = 'المدينة: ' + cityName + ' — ' + finalAddress;
+                    if (this.selectedAreaId == 'other') {
+                        const parts = [];
+                        if (this.selectedCity) {
+                            parts.push('المدينة: ' + this.selectedCity);
+                        }
+                        if (this.customAreaName.trim()) {
+                            parts.push('المنطقة: ' + this.customAreaName.trim());
+                        }
+                        if (parts.length && !finalAddress.includes(parts[0])) {
+                            finalAddress = parts.join(' — ') + ' — ' + finalAddress;
                         }
                     }
 
@@ -108,7 +113,7 @@
                             body: JSON.stringify({
                                 recipient_name: recipientName,
                                 recipient_phone: this.phone,
-                                delivery_area_id: this.selectedAreaId === 'other' ? null : this.selectedAreaId,
+                                delivery_area_id: this.selectedAreaId == 'other' ? null : this.selectedAreaId,
                                 delivery_address: finalAddress,
                                 delivery_date: this.deliveryDate,
                                 delivery_time_slot: this.deliveryTimeSlot,
@@ -243,7 +248,6 @@
                                     @foreach($cities as $city)
                                         <option value="{{ $city }}">{{ $city }}</option>
                                     @endforeach
-                                    <option value="other_city">مدينة أخرى / غير ذلك</option>
                                 </select>
                                 <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3.5 text-neutral-500">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -261,13 +265,14 @@
                             </label>
                             <div class="relative">
                                 <select 
-                                    x-model="selectedAreaId" 
+                                    x-model="selectedAreaId"
+                                    @change="customAreaName = ''"
                                     style="background-image: none !important;"
                                     class="w-full [background-image:none] appearance-none bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl ps-4 pe-10 py-2.5 text-xs md:text-sm font-body cursor-pointer"
                                 >
-                                    <template x-for="area in filteredAreas" :key="area.id">
-                                        <option :value="area.id" x-text="area.area_ar + ' (' + formatMoney(area.delivery_fee) + ')'"></option>
-                                    </template>
+                                    @foreach($deliveryAreas as $area)
+                                        <option value="{{ $area->id }}" :hidden="selectedCity !== '{{ $area->city_ar }}'">{{ $area->area_ar }} ({{ format_money($area->delivery_fee) }})</option>
+                                    @endforeach
                                     <option value="other">غير ذلك (سيتم إخبارك لاحقاً)</option>
                                 </select>
                                 <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3.5 text-neutral-500">
@@ -277,13 +282,29 @@
                         </div>
                     </div>
 
-                    <div x-show="selectedAreaId === 'other'" class="p-3 bg-purple-100/60 rounded-2xl text-xs text-primary border border-secondary/30 flex items-start gap-2.5 transition-all">
-                        <svg class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                    <div x-show="selectedAreaId == 'other'" x-transition class="space-y-3">
                         <div>
-                            <span class="font-bold text-primary">سعر التوصيل: سيتم إخبارك لاحقاً.</span>
-                            <p class="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">يرجى كتابة عنوانك بالتفصيل أدناه (المدينة والمنطقة والشارع)، وسيتواصل معك فريقنا لتأكيد إمكانية وقيمة أجور التوصيل لمنطقتك.</p>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>اسم المنطقة</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                x-model="customAreaName" 
+                                placeholder="اكتب اسم المنطقة هنا..."
+                                class="w-full bg-tertiary-50 border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl ps-4 pe-4 py-2.5 text-xs md:text-sm font-body-ar transition-colors"
+                            />
+                        </div>
+                        <div class="p-3 bg-purple-100/60 rounded-2xl text-xs text-primary border border-secondary/30 flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <span class="font-bold text-primary">سعر التوصيل: سيتم إخبارك لاحقاً.</span>
+                                <p class="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">يرجى كتابة اسم المنطقة وعنوانك بالتفصيل أدناه، وسيتواصل معك فريقنا لتأكيد إمكانية وقيمة أجور التوصيل لمنطقتك.</p>
+                            </div>
                         </div>
                     </div>
 

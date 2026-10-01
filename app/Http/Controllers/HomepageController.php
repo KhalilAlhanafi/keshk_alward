@@ -20,7 +20,12 @@ class HomepageController extends Controller
         $latestActiveOrder = null;
         if (Auth::check()) {
             $latestActiveOrder = Order::where('user_id', Auth::id())
-                ->whereNotIn('status', ['delivered', 'cancelled'])
+                ->where('status', '!=', 'cancelled')
+                ->where(function ($q) {
+                    // Show non-delivered orders always, and delivered orders for 24h
+                    $q->where('status', '!=', 'delivered')
+                      ->orWhere('updated_at', '>=', now()->subHours(12));
+                })
                 ->latest()
                 ->first();
         }
